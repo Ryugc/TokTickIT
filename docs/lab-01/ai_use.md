@@ -90,3 +90,38 @@ Requirements:
 - **Errors/Issues Encountered**: None. Schema validation (`prisma validate`) and Prisma client generation (`prisma generate`) executed cleanly.
 - **Rationale**: Ensure data integrity and standard database access pattern for the ticketing application vertical slice.
 
+---
+
+### Entry #003
+- **Date**: 2026-08-09
+- **Task / Feature**: Issue 2 - Express API Health Check endpoint implementation and Vitest + Supertest automated test suite.
+- **AI Tool**: Antigravity (Gemini 3.6 Flash)
+
+#### 1. Prompt / Instruction
+```text
+Please implement Issue 2 (API Health Check) for TokTickIT according to the Lab 1 specifications:
+
+Requirements:
+1. Create a GET /api/health endpoint in Express (server/src).
+2. The endpoint must return HTTP status 200 with JSON:
+   {
+     "status": "ok",
+     "service": "TokTickIT API"
+   }
+3. Add an automated Supertest test in server/tests/ (or tests/lab-01/) to verify GET /api/health returns 200 and the correct JSON body.
+4. Update docs/lab-01/ai_use.md to log this prompt and interaction.
+```
+
+#### 2. AI Output Summary
+- Separated Express app setup into `server/src/app.ts` exporting `app`, and `server/src/index.ts` starting the listener on `PORT`.
+- Configured `GET /api/health` endpoint in `server/src/app.ts` returning HTTP 200 with body `{ "status": "ok", "service": "TokTickIT API" }`.
+- Created Vitest configuration (`server/vitest.config.ts`) and Supertest automated test in `server/tests/lab-01/health.test.ts`.
+- Added `"test": "vitest run"` to `server/package.json`.
+- Logged prompt and interaction in `docs/lab-01/ai_use.md`.
+
+#### 3. Manual Code Adjustments & Review
+- **Code Changes**: Adjusted test runner to Vitest + Supertest and placed test file inside `server/tests/lab-01/health.test.ts` as per Lab 1 repository constraints.
+- **Errors/Issues Encountered**: None. Tests passed cleanly and TypeScript compiled with zero errors.
+- **Rationale**: Meets Lab 1 automated testing requirements and health check API specifications.
+
+
