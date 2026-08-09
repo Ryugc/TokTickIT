@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import prisma from './lib/prisma';
 
 dotenv.config();
 
@@ -17,6 +18,24 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// Categories list endpoint
+app.get('/api/categories', async (_req: Request, res: Response) => {
+  try {
+    const categories = await prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    });
+    res.status(200).json(categories);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch categories' });
+  }
+});
+
 // Root API welcome endpoint
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
@@ -24,8 +43,10 @@ app.get('/api', (_req: Request, res: Response) => {
     version: '0.1.0',
     endpoints: {
       health: '/api/health',
+      categories: '/api/categories',
     },
   });
 });
 
 export default app;
+
