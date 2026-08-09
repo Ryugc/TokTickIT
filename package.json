@@ -11,6 +11,7 @@
     "install:all": "npm --prefix client install && npm --prefix server install"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "concurrently": "^8.2.2"
   }
 }
