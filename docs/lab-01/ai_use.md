@@ -1,4 +1,4 @@
-# AI Usage Log - Lab 01
+git checkout lab1-staging# AI Usage Log - Lab 01
 
 This log records interactions with AI assistants during the development of TokTickIT (Lab 01).
 
