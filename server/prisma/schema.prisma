@@ -9,12 +9,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  TECHNICIAN
-  ADMIN
-}
-
 enum TicketStatus {
   OPEN
   IN_PROGRESS
@@ -22,23 +16,14 @@ enum TicketStatus {
   CLOSED
 }
 
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String
-  role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ticketsCreated  Ticket[] @relation("CreatedTickets")
-  ticketsAssigned Ticket[] @relation("AssignedTickets")
+  tickets Ticket[]
 
   @@map("users")
 }
@@ -47,15 +32,13 @@ model Ticket {
   id          String       @id @default(uuid())
   title       String
   description String
+  price       Float
   status      TicketStatus @default(OPEN)
-  priority    Priority     @default(MEDIUM)
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  createdById  String
-  createdBy    User    @relation("CreatedTickets", fields: [createdById], references: [id], onDelete: Cascade)
-  assignedToId String?
-  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
-
   @@map("tickets")
 }
+

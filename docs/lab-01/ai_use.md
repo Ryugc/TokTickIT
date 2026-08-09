@@ -56,3 +56,37 @@ Requirements:
 - **Code Changes**: Verified generated files and verified TypeScript compilation and Prisma validation.
 - **Errors/Issues Encountered**: None so far.
 - **Rationale**: Initial baseline setup.
+
+---
+
+### Entry #002
+- **Date**: 2026-08-09
+- **Task / Feature**: Set up Prisma database schema and connection configuration for TokTickIT in `/server`.
+- **AI Tool**: Antigravity (Gemini 3.6 Flash)
+
+#### 1. Prompt / Instruction
+```text
+Please set up the Prisma database schema and connection configuration for "TokTickIT" inside the /server directory.
+
+Requirements:
+1. Configure Prisma ORM to use PostgreSQL as the provider.
+2. Define basic models suitable for a ticketing application vertical slice:
+   - User model (id, email, name, createdAt, updatedAt)
+   - Ticket model (id, title, description, price, status, userId, createdAt, updatedAt)
+3. Ensure server/.env and server/.env.example contain a DATABASE_URL placeholder.
+4. Update package.json scripts in /server if needed for running Prisma migrations or generating the client.
+5. Update docs/lab-01/ai_use.md to log this interaction and prompt.
+```
+
+#### 2. AI Output Summary
+- Updated `server/prisma/schema.prisma` with PostgreSQL datasource, `User` model, `Ticket` model (with `price`, `userId`, `TicketStatus` enum), and relationship.
+- Created `server/src/lib/prisma.ts` for centralized Prisma client instantiation.
+- Confirmed `DATABASE_URL` PostgreSQL placeholder in `server/.env` and `server/.env.example`.
+- Updated `server/package.json` scripts with `prisma:migrate`, `prisma:push`, and `prisma:studio`.
+- Updated `docs/lab-01/ai_use.md` with Entry #002.
+
+#### 3. Manual Code Adjustments & Review
+- **Code Changes**: Verified schema field names, types, and relations (`User.tickets` -> `Ticket.user`).
+- **Errors/Issues Encountered**: None. Schema validation (`prisma validate`) and Prisma client generation (`prisma generate`) executed cleanly.
+- **Rationale**: Ensure data integrity and standard database access pattern for the ticketing application vertical slice.
+
