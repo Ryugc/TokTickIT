@@ -11,7 +11,9 @@ All test files live under `server/tests/lab-01/` and `client/src/App.test.tsx`.
 | 5 | Vitest | Displays success state with categories on successful API response | passed |
 | 6 | Vitest | Displays offline status and error message on fetch failure | passed |
 
-### Test Output
+---
+
+### Backend Test Output:
 
 ```text
 > toktickit-server@0.1.0 test
@@ -30,8 +32,13 @@ Test Files  2 passed (2)
      Tests  2 passed (2)
   Start at  11:14:21
   Duration  2.49s (transform 134ms, setup 0ms, import 3.21s, tests 42ms, environment 0ms)
+```
 
+---
 
+### Frontend Test Output:
+
+```text
 > toktickit-client@0.1.0 test
 > vitest run
 
@@ -52,3 +59,4 @@ Test Files  1 passed (1)
      Tests  4 passed (4)
   Start at  11:22:14
   Duration  42.73s (transform 126ms, setup 6.55s, import 727ms, tests 160ms, environment 34.80s)
+```
