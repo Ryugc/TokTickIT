@@ -1,9 +1,27 @@
-# Lab 1 Test Inventory (`docs/lab-01/tests.md`)
+# Lab 1 — Test Plan and Evidence
 
-| Test ID | Tool | Test Description | File Path |
-| :--- | :--- | :--- | :--- |
-| **API-01** | Supertest | Health endpoint (`GET /api/health`) returns status 200 and expected JSON payload | `server/tests/lab-01/health.test.ts` |
-| **API-02** | Supertest | Categories endpoint (`GET /api/categories`) returns status 200 and the 4 seeded categories | `server/tests/lab-01/categories.test.ts` |
-| **UI-01** | Vitest | Renders the main app heading ("TokTickIT IT Service Desk") and the "[Check System]" button | `client/src/App.test.tsx` |
-| **UI-02** | Vitest | Displays loading state during fetch, then updates to show "System Status: Online" and category list | `client/src/App.test.tsx` |
-| **UI-03** | Vitest | Displays "System Status: Offline" and a helpful error message when the API fetch fails | `client/src/App.test.tsx` |
+All test files live under `server/tests/lab-01/` and `client/tests/lab-01/`.
+
+| # | Tool | Test | Result |
+| :-: | :--- | :--- | :-: |
+| 1 | Supertest | GET /api/health returns 200, status=ok | passed |
+| 2 | Supertest | GET /api/categories returns 4 seeded categories in id order | passed |
+| 3 | Vitest | Heading renders | passed |
+| 4 | Vitest | Success state shows Online + category list | passed |
+| 5 | Vitest | Error state shows Offline + message | passed |
+
+### Backend Test Output
+
+```text
+> toktickit-server@1.0.0 test
+> vitest run
+
+RUN  v2.1.9  /Users/DBsNICE/toktickit/server
+
+  ✓ tests/lab-01/categories.test.ts (1) 887ms
+  ✓ tests/lab-01/health.test.ts (1)
+
+ Test Files  2 passed (2)
+      Tests  2 passed (2)
+   Start at  17:26:15
+   Duration  2.24s (transform 125ms, setup 0ms, collect 1.16s, tests 1.14s, environment 1ms, prepare 292ms)
