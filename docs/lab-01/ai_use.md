@@ -70,6 +70,4 @@
 
 ## 💡 Overall Reflection
 
-Using Gemini 3.5 Flash via the GCP Antigravity coding agent significantly accelerated initial project scaffolding and boilerplate generation. Refining my prompts prior to sending them to the agent ensured precise outputs that closely adhered to the lab requirements. 
-
-While the AI successfully handled code generation for routes, UI components, and test cases, active oversight was still necessary—such as diagnosing and manually resolving missing environment type definitions (`@types/node`) during the Prisma seed setup.
+Using Gemini 3.5 Flash in the Antigravity agent saved a lot of time on the initial project setup. I realized early on that polishing my prompts before sending them over made a huge difference in getting accurate code that actually matched the lab specs. While the AI was great for cranking out Express routes, UI components, and test cases, I couldn't just run it on autopilot. I still had to step in and troubleshoot real issues—like figuring out why the Prisma seed script failed and manually installing @types/node to fix it
