@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { DevRequesterProvider } from './context/DevRequesterContext';
+import Header from './components/Header';
+import DevRequesterSelector from './components/DevRequesterSelector';
 
 interface Category {
   id: number;
   name: string;
 }
 
-export default function App() {
+function MainContent() {
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<'idle' | 'online' | 'offline'>('idle');
   const [categories, setCategories] = useState<Category[]>([]);
@@ -36,62 +39,90 @@ export default function App() {
   };
 
   return (
-    <div className="container py-5">
-      <header className="mb-4 text-center">
-        <h1 className="display-5 fw-bold text-primary">TokTickIT IT Service Desk</h1>
-        <p className="lead text-muted">System Status & Service Category Checker</p>
-      </header>
+    <>
+      <Header />
+      <main className="container">
+        <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '1rem' }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary-green)', marginBottom: '0.5rem' }}>
+            TokTickIT IT Service Desk
+          </h2>
+          <p style={{ color: '#6B7280' }}>System Status & Service Category Checker</p>
+        </div>
 
-      <div className="row justify-content-center">
-        <div className="col-md-8 col-lg-6">
-          <div className="card shadow-sm border-0">
-            <div className="card-body text-center p-4">
-              <button
-                className="btn btn-primary btn-lg mb-4"
-                onClick={checkSystem}
-                disabled={loading}
-              >
-                {loading ? 'Checking system status...' : '[Check System]'}
-              </button>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div className="zen-card" style={{ textAlign: 'center' }}>
+            <button
+              className="btn-zen-primary"
+              onClick={checkSystem}
+              disabled={loading}
+              style={{ fontSize: '1rem', padding: '0.75rem 1.5rem', marginBottom: '1.5rem' }}
+            >
+              {loading ? 'Checking system status...' : '[Check System]'}
+            </button>
 
-              {loading && (
-                <div className="d-flex align-items-center justify-content-center gap-2 text-secondary mb-3">
-                  <div className="spinner-border spinner-border-sm" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <span>Checking system status...</span>
+            {loading && (
+              <div style={{ color: '#6B7280', marginBottom: '1rem' }}>
+                Checking system status...
+              </div>
+            )}
+
+            {status === 'online' && !loading && (
+              <div style={{ textAlign: 'left' }}>
+                <div className="dev-notice-banner" style={{ borderLeftColor: 'var(--primary-green)' }}>
+                  <strong>System Status: Online</strong>
                 </div>
-              )}
+                <h4 style={{ fontWeight: 600, marginBottom: '1rem' }}>Supported Request Categories:</h4>
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {categories.map((cat) => (
+                    <li
+                      key={cat.id}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                      }}
+                    >
+                      <span
+                        style={{
+                          backgroundColor: 'var(--pale-green)',
+                          color: 'var(--primary-green)',
+                          fontWeight: 700,
+                          borderRadius: '9999px',
+                          padding: '0.125rem 0.5rem',
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        {cat.id}
+                      </span>
+                      {cat.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-              {status === 'online' && !loading && (
-                <div className="text-start">
-                  <div className="alert alert-success d-flex align-items-center mb-4" role="alert">
-                    <span className="fw-bold">System Status: Online</span>
-                  </div>
-                  <h5 className="fw-semibold mb-3">Supported Request Categories:</h5>
-                  <ul className="list-group">
-                    {categories.map((cat) => (
-                      <li key={cat.id} className="list-group-item d-flex align-items-center">
-                        <span className="badge bg-primary rounded-pill me-3">{cat.id}</span>
-                        {cat.name}
-                      </li>
-                    ))}
-                  </ul>
+            {status === 'offline' && !loading && (
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '1rem', borderRadius: '0.375rem' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>System Status: Offline</div>
+                  <div>{errorMessage}</div>
                 </div>
-              )}
-
-              {status === 'offline' && !loading && (
-                <div className="text-start">
-                  <div className="alert alert-danger mb-3" role="alert">
-                    <div className="fw-bold mb-1">System Status: Offline</div>
-                    <div>{errorMessage}</div>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+      <DevRequesterSelector />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <DevRequesterProvider>
+      <MainContent />
+    </DevRequesterProvider>
   );
 }

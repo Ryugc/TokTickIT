@@ -9,7 +9,7 @@ describe('TokTickIT IT Service Desk Component', () => {
 
   it('renders app title heading and check system button', () => {
     render(<App />);
-    expect(screen.getByText('TokTickIT IT Service Desk')).toBeInTheDocument();
+    expect(screen.getAllByText('TokTickIT IT Service Desk').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: '[Check System]' })).toBeInTheDocument();
   });
 
@@ -42,6 +42,14 @@ describe('TokTickIT IT Service Desk Component', () => {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(mockCategories),
+        } as Response);
+      }
+      if (typeof url === 'string' && url.includes('/api/requesters')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            { id: 1, name: 'Jennifer Anderson', email: 'jennifer.anderson@toktickit.com', department: 'Human Resources', isActive: true }
+          ]),
         } as Response);
       }
       return Promise.reject(new Error('Unknown endpoint'));
