@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DevRequesterProvider } from './context/DevRequesterContext';
 import Header from './components/Header';
 import DevRequesterSelector from './components/DevRequesterSelector';
+import CreateTicket from './components/CreateTicket';
 
 interface Category {
   id: number;
@@ -42,20 +43,25 @@ function MainContent() {
     <>
       <Header />
       <main className="container">
-        <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '1rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '0.5rem' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary-green)', marginBottom: '0.5rem' }}>
             TokTickIT IT Service Desk
           </h2>
-          <p style={{ color: '#6B7280' }}>System Status & Service Category Checker</p>
+          <p style={{ color: '#6B7280' }}>Requester Portal</p>
         </div>
 
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <CreateTicket />
+
+        <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
           <div className="zen-card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--dark-text)', marginBottom: '1rem' }}>
+              System Status & Service Category Checker
+            </h3>
             <button
               className="btn-zen-primary"
               onClick={checkSystem}
               disabled={loading}
-              style={{ fontSize: '1rem', padding: '0.75rem 1.5rem', marginBottom: '1.5rem' }}
+              style={{ fontSize: '1rem', padding: '0.75rem 1.5rem', marginBottom: '1rem' }}
             >
               {loading ? 'Checking system status...' : '[Check System]'}
             </button>
@@ -67,7 +73,7 @@ function MainContent() {
             )}
 
             {status === 'online' && !loading && (
-              <div style={{ textAlign: 'left' }}>
+              <div style={{ textAlign: 'left', marginTop: '1rem' }}>
                 <div className="dev-notice-banner" style={{ borderLeftColor: 'var(--primary-green)' }}>
                   <strong>System Status: Online</strong>
                 </div>
@@ -104,7 +110,7 @@ function MainContent() {
             )}
 
             {status === 'offline' && !loading && (
-              <div style={{ textAlign: 'left' }}>
+              <div style={{ textAlign: 'left', marginTop: '1rem' }}>
                 <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '1rem', borderRadius: '0.375rem' }}>
                   <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>System Status: Offline</div>
                   <div>{errorMessage}</div>
@@ -126,3 +132,5 @@ export default function App() {
     </DevRequesterProvider>
   );
 }
+
+

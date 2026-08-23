@@ -62,10 +62,11 @@ describe('DevRequesterSelector Component & Context', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
     });
 
-    const options = screen.getAllByRole('option');
+    const requesterSelect = screen.getByLabelText(/Development Requester User/i);
+    const options = requesterSelect.querySelectorAll('option');
     expect(options).toHaveLength(3);
     expect(options[0]).toHaveTextContent('Jennifer Anderson (Human Resources) — jennifer.anderson@toktickit.com');
     expect(options[1]).toHaveTextContent('Sarah Johnson (Engineering) — sarah.johnson@toktickit.com');
@@ -76,10 +77,10 @@ describe('DevRequesterSelector Component & Context', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
     });
 
-    const select = screen.getByRole('combobox');
+    const select = screen.getByLabelText(/Development Requester User/i);
     fireEvent.change(select, { target: { value: '2' } });
 
     const continueButton = screen.getByRole('button', { name: 'Continue' });
@@ -101,7 +102,7 @@ describe('DevRequesterSelector Component & Context', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
     });
 
     // Select Jennifer Anderson first

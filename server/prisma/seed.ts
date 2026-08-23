@@ -42,6 +42,15 @@ const requesters = [
   },
 ];
 
+const relatedSystems = [
+  'Active Directory',
+  'Email & Calendar',
+  'VPN Access',
+  'ERP System',
+  'Workstation Hardware',
+  'Internal Wi-Fi',
+];
+
 async function main() {
   console.log('Seeding IT categories...');
   for (const name of categories) {
@@ -51,6 +60,16 @@ async function main() {
       create: { name },
     });
     console.log(`- Upserted category: ${category.name} (id: ${category.id})`);
+  }
+
+  console.log('Seeding Related Systems...');
+  for (const name of relatedSystems) {
+    const system = await prisma.relatedSystem.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+    console.log(`- Upserted related system: ${system.name} (id: ${system.id})`);
   }
 
   console.log('Seeding Development Requesters...');
@@ -80,3 +99,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
