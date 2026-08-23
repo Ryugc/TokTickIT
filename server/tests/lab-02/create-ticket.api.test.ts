@@ -39,6 +39,7 @@ describe('POST /api/tickets & Attachment Upload API', () => {
       vi.spyOn(prisma.category, 'findUnique').mockResolvedValue(mockCategory as any);
       vi.spyOn(prisma.relatedSystem, 'findUnique').mockResolvedValue(mockSystem as any);
       vi.spyOn(prisma.ticket, 'findUnique').mockResolvedValue(null);
+      vi.spyOn(prisma.ticket, 'findFirst').mockResolvedValue(null);
       vi.spyOn(prisma.ticket, 'create').mockResolvedValue(mockCreatedTicket as any);
 
       const response = await request(app)

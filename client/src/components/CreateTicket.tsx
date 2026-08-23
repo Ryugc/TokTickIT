@@ -21,6 +21,14 @@ interface Ticket {
   createdAt: string;
 }
 
+const getApiUrl = (path: string): string => {
+  const origin =
+    typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+      ? window.location.origin
+      : 'http://localhost:3000';
+  return `${origin}${path}`;
+};
+
 export const CreateTicket: React.FC = () => {
   const { selectedRequester, setIsSelectorOpen } = useDevRequester();
 
@@ -43,8 +51,8 @@ export const CreateTicket: React.FC = () => {
     const fetchData = async () => {
       try {
         const [catRes, sysRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/related-systems'),
+          fetch(getApiUrl('/api/categories')),
+          fetch(getApiUrl('/api/related-systems')),
         ]);
 
         if (catRes.ok) {
@@ -156,7 +164,7 @@ export const CreateTicket: React.FC = () => {
 
     try {
       // Create ticket
-      const ticketRes = await fetch('/api/tickets', {
+      const ticketRes = await fetch(getApiUrl('/api/tickets'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +191,7 @@ export const CreateTicket: React.FC = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const attachRes = await fetch(`/api/tickets/${ticket.id}/attachments`, {
+        const attachRes = await fetch(getApiUrl(`/api/tickets/${ticket.id}/attachments`), {
           method: 'POST',
           headers: {
             'X-Requester-Id': String(selectedRequester.id),

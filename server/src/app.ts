@@ -157,7 +157,7 @@ app.post('/api/tickets', async (req: Request, res: Response) => {
     while (attempts < 10) {
       const randomPart = Math.floor(100000 + Math.random() * 900000).toString();
       const candidate = `TKT-${year}-${randomPart}`;
-      const existing = await prisma.ticket.findUnique({ where: { ticketNumber: candidate } });
+      const existing = await prisma.ticket.findFirst({ where: { ticketNumber: candidate } });
       if (!existing) {
         ticketNumber = candidate;
         break;
@@ -193,6 +193,8 @@ const uploadSingleFile = upload.single('file');
 
 app.post('/api/tickets/:id/attachments', (req: Request, res: Response) => {
   uploadSingleFile(req, res, async (err) => {
+    const file = (req as any).file;
+
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ error: 'File size exceeds maximum limit of 5MB' });
@@ -205,38 +207,38 @@ app.post('/api/tickets/:id/attachments', (req: Request, res: Response) => {
     try {
       const requesterIdHeader = req.headers['x-requester-id'];
       if (!requesterIdHeader) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({ error: 'Missing X-Requester-Id header' });
       }
       const requesterId = Number(requesterIdHeader);
       if (isNaN(requesterId) || requesterId <= 0) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
       }
 
       const ticketId = Number(req.params.id);
       if (isNaN(ticketId)) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({ error: 'Invalid ticket ID' });
       }
 
       const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
       if (!ticket) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(404).json({ error: 'Ticket not found' });
       }
 
       if (ticket.requesterId !== requesterId) {
-        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(403).json({ error: 'Forbidden: Ticket does not belong to requester' });
       }
 
-      if (!req.file) {
+      if (!file) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      if (!PERMITTED_MIME_TYPES.includes(req.file.mimetype)) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      if (!PERMITTED_MIME_TYPES.includes(file.mimetype)) {
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({ error: 'Invalid file type. Allowed: JPG, PNG, WEBP, PDF' });
       }
 
@@ -245,23 +247,23 @@ app.post('/api/tickets/:id/attachments', (req: Request, res: Response) => {
       });
 
       if (activeAttachmentsCount >= 5) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
         return res.status(400).json({ error: 'Maximum active attachments limit reached' });
       }
 
       const attachment = await prisma.attachment.create({
         data: {
-          fileName: req.file.originalname,
-          fileType: req.file.mimetype,
-          fileSize: req.file.size,
-          storagePath: req.file.path,
+          fileName: file.originalname,
+          fileType: file.mimetype,
+          fileSize: file.size,
+          storagePath: file.path,
           ticketId,
         },
       });
 
       return res.status(201).json(attachment);
     } catch (error) {
-      if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
       return res.status(500).json({ error: 'Failed to upload attachment' });
     }
   });
