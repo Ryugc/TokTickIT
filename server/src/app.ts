@@ -269,6 +269,109 @@ app.post('/api/tickets/:id/attachments', (req: Request, res: Response) => {
   });
 });
 
+// GET /api/tickets — Paginated, filtered, searchable ticket list for the active requester
+app.get('/api/tickets', async (req: Request, res: Response) => {
+  try {
+    // --- Identity resolution ---
+    const requesterIdHeader = req.headers['x-requester-id'];
+    if (!requesterIdHeader) {
+      return res.status(400).json({ error: 'Missing X-Requester-Id header' });
+    }
+    const requesterId = Number(requesterIdHeader);
+    if (isNaN(requesterId) || requesterId <= 0) {
+      return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
+    }
+
+    const requester = await prisma.requesterUser.findUnique({ where: { id: requesterId } });
+    if (!requester || !requester.isActive) {
+      return res.status(400).json({ error: 'Invalid or inactive requester' });
+    }
+
+    // --- Query params ---
+    const {
+      search,
+      categoryId,
+      requestedPriority,
+      currentStatus,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = '1',
+      limit = '10',
+    } = req.query as Record<string, string>;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Allowed sort fields whitelist (prevents injection)
+    const allowedSortFields = ['createdAt', 'updatedAt', 'currentStatus', 'requestedPriority'];
+    const resolvedSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const resolvedSortOrder: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    // --- Build where clause ---
+    const where: Record<string, unknown> = { requesterId };
+
+    if (categoryId) {
+      const numCategoryId = parseInt(categoryId, 10);
+      if (!isNaN(numCategoryId) && numCategoryId > 0) {
+        where.categoryId = numCategoryId;
+      }
+    }
+
+    if (requestedPriority) {
+      const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+      const upperPriority = requestedPriority.toUpperCase();
+      if (validPriorities.includes(upperPriority)) {
+        where.requestedPriority = upperPriority;
+      }
+    }
+
+    if (currentStatus) {
+      const validStatuses = ['NEW', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+      const upperStatus = currentStatus.toUpperCase();
+      if (validStatuses.includes(upperStatus)) {
+        where.currentStatus = upperStatus;
+      }
+    }
+
+    if (search && search.trim() !== '') {
+      where.OR = [
+        { summary: { contains: search.trim(), mode: 'insensitive' } },
+        { ticketNumber: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+
+    // --- Execute queries ---
+    const [tickets, total] = await Promise.all([
+      prisma.ticket.findMany({
+        where,
+        orderBy: { [resolvedSortBy]: resolvedSortOrder },
+        skip,
+        take: limitNum,
+        include: {
+          category: { select: { id: true, name: true } },
+          relatedSystem: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.ticket.count({ where }),
+    ]);
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limitNum);
+
+    return res.status(200).json({
+      data: tickets,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch tickets' });
+  }
+});
+
 // Root API welcome endpoint
 app.get('/api', (_req: Request, res: Response) => {
   res.json({

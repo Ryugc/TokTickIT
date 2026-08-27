@@ -3,6 +3,7 @@ import { DevRequesterProvider } from './context/DevRequesterContext';
 import Header from './components/Header';
 import DevRequesterSelector from './components/DevRequesterSelector';
 import CreateTicket from './components/CreateTicket';
+import MyTickets from './components/MyTickets';
 
 interface Category {
   id: number;
@@ -51,6 +52,8 @@ function MainContent() {
         </div>
 
         <CreateTicket />
+
+        <MyTickets />
 
         <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
           <div className="zen-card" style={{ textAlign: 'center' }}>

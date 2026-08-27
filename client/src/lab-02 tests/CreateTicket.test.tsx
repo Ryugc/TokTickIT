@@ -79,11 +79,12 @@ describe('CreateTicket Component', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Category/i)).toBeInTheDocument();
+      // Use specific IDs to avoid ambiguity with MyTickets filter labels
+      expect(document.getElementById('ticket-category')).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Related System/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Requested Priority/i)).toBeInTheDocument();
+    expect(document.getElementById('ticket-system')).toBeInTheDocument();
+    expect(document.getElementById('ticket-priority')).toBeInTheDocument();
     expect(screen.getByLabelText(/Summary/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Description/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/File Attachment/i)).toBeInTheDocument();
