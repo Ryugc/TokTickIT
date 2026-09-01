@@ -4,6 +4,7 @@ import Header from './components/Header';
 import DevRequesterSelector from './components/DevRequesterSelector';
 import CreateTicket from './components/CreateTicket';
 import MyTickets from './components/MyTickets';
+import TicketDetail from './components/TicketDetail';
 
 interface Category {
   id: number;
@@ -11,6 +12,7 @@ interface Category {
 }
 
 function MainContent() {
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<'idle' | 'online' | 'offline'>('idle');
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,9 +53,17 @@ function MainContent() {
           <p style={{ color: '#6B7280' }}>Requester Portal</p>
         </div>
 
-        <CreateTicket />
-
-        <MyTickets />
+        {selectedTicketId !== null ? (
+          <TicketDetail
+            ticketId={selectedTicketId}
+            onBack={() => setSelectedTicketId(null)}
+          />
+        ) : (
+          <>
+            <CreateTicket />
+            <MyTickets onSelectTicket={(id) => setSelectedTicketId(id)} />
+          </>
+        )}
 
         <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
           <div className="zen-card" style={{ textAlign: 'center' }}>

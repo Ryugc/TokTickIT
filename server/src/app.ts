@@ -372,6 +372,151 @@ app.get('/api/tickets', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/tickets/:id — Retrieve full ticket detail for an owned ticket
+app.get('/api/tickets/:id', async (req: Request, res: Response) => {
+  try {
+    const requesterIdHeader = req.headers['x-requester-id'];
+    if (!requesterIdHeader) {
+      return res.status(400).json({ error: 'Missing X-Requester-Id header' });
+    }
+    const requesterId = Number(requesterIdHeader);
+    if (isNaN(requesterId) || requesterId <= 0) {
+      return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (isNaN(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'Invalid ticket ID' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: {
+        category: { select: { id: true, name: true } },
+        relatedSystem: { select: { id: true, name: true } },
+        requesterUser: { select: { id: true, name: true, email: true, department: true } },
+        attachments: {
+          select: {
+            id: true,
+            fileName: true,
+            fileType: true,
+            fileSize: true,
+            isRemoved: true,
+            removalReason: true,
+            createdAt: true,
+          },
+          orderBy: { id: 'asc' },
+        },
+      },
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    if (ticket.requesterId !== requesterId) {
+      return res.status(403).json({ error: 'Forbidden: Ticket does not belong to requester' });
+    }
+
+    return res.status(200).json(ticket);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch ticket details' });
+  }
+});
+
+// DELETE /api/attachments/:id — Soft-remove attachment with mandatory removalReason
+app.delete('/api/attachments/:id', async (req: Request, res: Response) => {
+  try {
+    const requesterIdHeader = req.headers['x-requester-id'];
+    if (!requesterIdHeader) {
+      return res.status(400).json({ error: 'Missing X-Requester-Id header' });
+    }
+    const requesterId = Number(requesterIdHeader);
+    if (isNaN(requesterId) || requesterId <= 0) {
+      return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
+    }
+
+    const attachmentId = Number(req.params.id);
+    if (isNaN(attachmentId) || attachmentId <= 0) {
+      return res.status(400).json({ error: 'Invalid attachment ID' });
+    }
+
+    const { removalReason } = req.body || {};
+    if (!removalReason || typeof removalReason !== 'string' || removalReason.trim() === '') {
+      return res.status(400).json({ error: 'Removal reason is required' });
+    }
+
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: { ticket: true },
+    });
+
+    if (!attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    if (attachment.ticket.requesterId !== requesterId) {
+      return res.status(403).json({ error: 'Forbidden: Ticket does not belong to requester' });
+    }
+
+    const updatedAttachment = await prisma.attachment.update({
+      where: { id: attachmentId },
+      data: {
+        isRemoved: true,
+        removalReason: removalReason.trim(),
+      },
+    });
+
+    return res.status(200).json(updatedAttachment);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to remove attachment' });
+  }
+});
+
+// GET /api/attachments/:id/download — Stream active attachment bytes
+app.get('/api/attachments/:id/download', async (req: Request, res: Response) => {
+  try {
+    const requesterIdHeader = req.headers['x-requester-id'] || req.query.requesterId;
+    if (!requesterIdHeader) {
+      return res.status(400).json({ error: 'Missing X-Requester-Id header' });
+    }
+    const requesterId = Number(requesterIdHeader);
+    if (isNaN(requesterId) || requesterId <= 0) {
+      return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
+    }
+
+    const attachmentId = Number(req.params.id);
+    if (isNaN(attachmentId) || attachmentId <= 0) {
+      return res.status(400).json({ error: 'Invalid attachment ID' });
+    }
+
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: { ticket: true },
+    });
+
+    if (!attachment) {
+      return res.status(404).json({ error: 'Attachment not found' });
+    }
+
+    if (attachment.ticket.requesterId !== requesterId) {
+      return res.status(403).json({ error: 'Forbidden: Ticket does not belong to requester' });
+    }
+
+    if (attachment.isRemoved) {
+      return res.status(410).json({ error: 'Attachment has been removed' });
+    }
+
+    if (!fs.existsSync(attachment.storagePath)) {
+      return res.status(404).json({ error: 'Attachment file not found on disk' });
+    }
+
+    return res.download(attachment.storagePath, attachment.fileName);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to download attachment' });
+  }
+});
+
 // Root API welcome endpoint
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
