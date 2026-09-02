@@ -167,7 +167,11 @@ const SkeletonCard: React.FC = () => (
 // Main Component
 // ---------------------------------------------------------------------------
 
-export const MyTickets: React.FC = () => {
+interface MyTicketsProps {
+  onSelectTicket?: (ticketId: number) => void;
+}
+
+export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
   const { selectedRequester, setIsSelectorOpen } = useDevRequester();
 
   // Filter/sort state
@@ -627,10 +631,12 @@ export const MyTickets: React.FC = () => {
                   <tr
                     key={ticket.id}
                     id={`ticket-row-${ticket.id}`}
+                    onClick={() => onSelectTicket?.(ticket.id)}
                     style={{
                       backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
                       borderBottom: '1px solid var(--border-color)',
                       transition: 'background-color 0.15s',
+                      cursor: onSelectTicket ? 'pointer' : 'default',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--pale-green)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA')}
@@ -682,6 +688,7 @@ export const MyTickets: React.FC = () => {
               <div
                 key={ticket.id}
                 id={`ticket-card-${ticket.id}`}
+                onClick={() => onSelectTicket?.(ticket.id)}
                 style={{
                   backgroundColor: 'var(--surface-card)',
                   border: '1px solid var(--border-color)',
@@ -689,6 +696,7 @@ export const MyTickets: React.FC = () => {
                   padding: '1rem 1.125rem',
                   marginBottom: '0.75rem',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  cursor: onSelectTicket ? 'pointer' : 'default',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
