@@ -90,7 +90,8 @@ describe('DevRequesterSelector Component & Context', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Sarah Johnson')).toBeInTheDocument();
+    // Requester name now appears in Header AND MyTickets sub-header — use getAllByText
+    expect(screen.getAllByText('Sarah Johnson').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('(Engineering)')).toBeInTheDocument();
 
     const stored = JSON.parse(localStorage.getItem('toktickit_selected_requester') || '{}');
@@ -112,7 +113,8 @@ describe('DevRequesterSelector Component & Context', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('Jennifer Anderson')).toBeInTheDocument();
+    // Requester name now appears in Header AND MyTickets sub-header — use getAllByText
+    expect(screen.getAllByText('Jennifer Anderson').length).toBeGreaterThanOrEqual(1);
 
     // Click Change Requester button
     const changeButton = screen.getByRole('button', { name: 'Change Requester' });
