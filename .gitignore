@@ -49,3 +49,7 @@ Thumbs.db
 *.db-journal
 /server/prisma/migrations/
 !/server/prisma/migrations/
+
+server/uploads/*
+!server/uploads/.gitkeep
+test-results/
