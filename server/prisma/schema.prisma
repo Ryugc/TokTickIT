@@ -10,36 +10,18 @@ datasource db {
 }
 
 enum TicketStatus {
+  NEW
   OPEN
   IN_PROGRESS
   RESOLVED
   CLOSED
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tickets Ticket[]
-
-  @@map("users")
-}
-
-model Ticket {
-  id          String       @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  status      TicketStatus @default(OPEN)
-  userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@map("tickets")
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 model Category {
@@ -47,7 +29,73 @@ model Category {
   name      String   @unique
   createdAt DateTime @default(now())
 
+  tickets Ticket[]
+
   @@map("categories")
 }
 
+model RelatedSystem {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  tickets Ticket[]
+
+  @@map("related_systems")
+}
+
+model RequesterUser {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  department String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  tickets Ticket[]
+
+  @@map("requester_users")
+}
+
+model Ticket {
+  id                Int            @id @default(autoincrement())
+  ticketNumber      String         @unique
+  summary           String
+  description       String
+  requestedPriority TicketPriority
+  currentStatus     TicketStatus   @default(NEW)
+  
+  requesterId       Int
+  requesterUser     RequesterUser  @relation(fields: [requesterId], references: [id])
+  
+  categoryId        Int
+  category          Category       @relation(fields: [categoryId], references: [id])
+  
+  relatedSystemId   Int
+  relatedSystem     RelatedSystem  @relation(fields: [relatedSystemId], references: [id])
+  
+  attachments       Attachment[]
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("tickets")
+}
+
+model Attachment {
+  id            Int      @id @default(autoincrement())
+  fileName      String
+  fileType      String
+  fileSize      Int
+  storagePath   String
+  isRemoved     Boolean  @default(false)
+  removalReason String?
+  
+  ticketId      Int
+  ticket        Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+
+  @@map("attachments")
+}
 
