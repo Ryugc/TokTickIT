@@ -42,6 +42,6 @@ Requirements:
 Please run the database migration/seed and verify all tests pass before completing."*
 >
 > **Reflection:**  
-> The agent generated the Prisma schema, database seed script, Express route, and React selector component in one pass. Having the specification and API contract clearly defined beforehand prevented the agent from inventing unnecessary authentication fields like passwords or JWT tokens.
+> The agent generated the Prisma schema, database seed script, Express route, and React selector component in one pass. 
 
 | **3** | **Issue 3: Create Ticket & Attachment API** | Asked agent to implement `POST /api/tickets` with backend ticket number generation, file upload route for JPG/PNG/WEBP/PDF <= 5MB, Zen Green Create Ticket UI, and Supertest/Vitest coverage. | **Success:** Ticket creation and file attachment handling implemented cleanly. All validation and API test cases passed. |
