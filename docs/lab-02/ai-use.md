@@ -25,7 +25,7 @@
 > *"Please review the Lab 2 lab sheet requirements and help generate the initial markdown documentation under docs/lab-02/ (specification.md, api-spec.md, ui-spec.md, tests.md). Define explicit business rules (BR-01 through BR-08), functional requirements, acceptance criteria (AC-01 through AC-12), and the test traceability matrix before writing any application code."*
 >
 > **Reflection:**  
-> Establishing the engineering contract upfront provided strict constraints for subsequent coding prompts. This ensured the AI agent strictly respected scope boundaries (e.g., deferring real authentication to Lab 3).
+> Giving the ai what to expect upfront provided strict constraints for subsequent coding prompts. This ensured the AI agent strictly respected scope boundaries.
 
 ### Prompt #2: Issue 2 — Development Requester Context & Identity Selector
 > **Prompt:**  
@@ -85,12 +85,4 @@
 ---
 
 ## 💡 My Reflection on AI Collaboration
-
-Working with the GCP Antigravity Coding Agent (Gemini 3.5 Flash) demonstrated the power of **Spec-Driven Development (Spec DD)** and **Test-Driven Development (TDD)**. In earlier unconstrained attempts, AI agents tended to over-engineer solutions—such as prematurely adding full JWT authentication or IT Staff workflows that were explicitly out of scope for Lab 2[cite: 1].
-
-By requiring the AI to first assist in drafting `specification.md`, `api-spec.md`, `ui-spec.md`, and `tests.md`, we established strict architectural guardrails[cite: 1]. When prompted with modular, issue-specific tasks tied directly to Acceptance Criteria, the agent produced clean, maintainable code on the first pass[cite: 1]. 
-
-Key takeaways from this sprint:
-1. **Clear Contracts Prevent Scope Creep:** Writing explicit business rules (`BR-01` to `BR-08`) kept the AI agent focused solely on Requester MVP features[cite: 1].
-2. **Automated Verification builds Confidence:** Coupling AI-generated code with rigorous Supertest API specs, RTL component tests, and Playwright E2E tests ensured that edge cases—such as `403 Forbidden` data isolation and `410 Gone` soft-removal download blocking—were fully validated[cite: 1].
-3. **Human Oversight is Critical:** While the AI agent was exceptionally fast at boilerplate and component scaffolding, human review was essential for verifying UI aesthetics (Zen Green palette compliance), database seeding idempotency, and clean Git staging workflows[cite: 1].
+Working with the AI agent showed why setting clear specs and tests first is so important. Without rules, the AI tried to build extra features we didn't need, like real login systems or staff controls. Writing specification.md, api-spec.md, ui-spec.md, and tests.md beforehand gave the AI clear boundaries to stay focused on the basic user app. Backing up the AI's code with automated Supertest, RTL, and Playwright tests made sure key features—like 403 Forbidden privacy checks and 410 Gone file removals—worked correctly.
