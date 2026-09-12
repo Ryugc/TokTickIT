@@ -4,8 +4,12 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import { TicketPriority, TicketStatus } from '@prisma/client';
+import cookieParser from 'cookie-parser';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { TicketPriority, TicketStatus, Role } from '@prisma/client';
 import prisma from './lib/prisma';
+import { authMiddleware, requirePasswordChangeCheck, JWT_SECRET } from './middleware/auth';
 
 dotenv.config();
 
@@ -13,6 +17,7 @@ export const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -81,10 +86,134 @@ app.get('/api/related-systems', async (_req: Request, res: Response) => {
   }
 });
 
-// Requesters list endpoint (active only, ordered by name)
+// -------------------------------------------------------------
+// Authentication Routes
+// -------------------------------------------------------------
+
+// POST /api/auth/login
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Email and password are required.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password credentials.' });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Account is deactivated.' });
+    }
+
+    const passwordValid = bcrypt.compareSync(password, user.passwordHash);
+    if (!passwordValid) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password credentials.' });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
+      expiresIn: '8h',
+    });
+
+    res.cookie('toktickit_session', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 8 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        isActive: user.isActive,
+        mustChangePassword: user.mustChangePassword,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Login failed due to a server error.' });
+  }
+});
+
+// POST /api/auth/logout
+app.post('/api/auth/logout', (_req: Request, res: Response) => {
+  res.clearCookie('toktickit_session');
+  return res.status(200).json({ message: 'Successfully logged out.' });
+});
+
+// GET /api/auth/me
+app.get('/api/auth/me', authMiddleware, (req: Request, res: Response) => {
+  return res.status(200).json({ user: req.user });
+});
+
+// POST /api/auth/change-password
+app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'INVALID_INPUT', message: 'Current and new password are required.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found.' });
+    }
+
+    const currentValid = bcrypt.compareSync(currentPassword, user.passwordHash);
+    if (!currentValid) {
+      return res.status(400).json({ error: 'INVALID_CURRENT_PASSWORD', message: 'Current password is incorrect.' });
+    }
+
+    // Password Complexity Validation (BR-01)
+    const hasLength = newPassword.length >= 8;
+    const hasUpper = /[A-Z]/.test(newPassword);
+    const hasLower = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(newPassword);
+
+    if (!hasLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      return res.status(400).json({
+        error: 'INVALID_PASSWORD',
+        message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.',
+      });
+    }
+
+    const newPasswordHash = bcrypt.hashSync(newPassword, 10);
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newPasswordHash,
+        mustChangePassword: false,
+      },
+      select: {
+        id: true,
+        email: true,
+        mustChangePassword: true,
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Password changed successfully.',
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to change password.' });
+  }
+});
+
+// Requesters list endpoint (active requesters, ordered by name)
 app.get('/api/requesters', async (_req: Request, res: Response) => {
   try {
-    const requesters = await prisma.requesterUser.findMany({
+    const requesters = await prisma.user.findMany({
       where: {
         isActive: true,
       },
@@ -105,6 +234,7 @@ app.get('/api/requesters', async (_req: Request, res: Response) => {
   }
 });
 
+
 // Create ticket endpoint
 app.post('/api/tickets', async (req: Request, res: Response) => {
   try {
@@ -117,7 +247,7 @@ app.post('/api/tickets', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
     }
 
-    const requester = await prisma.requesterUser.findUnique({
+    const requester = await prisma.user.findUnique({
       where: { id: requesterId },
     });
     if (!requester || !requester.isActive) {
@@ -282,7 +412,7 @@ app.get('/api/tickets', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
     }
 
-    const requester = await prisma.requesterUser.findUnique({ where: { id: requesterId } });
+    const requester = await prisma.user.findUnique({ where: { id: requesterId } });
     if (!requester || !requester.isActive) {
       return res.status(400).json({ error: 'Invalid or inactive requester' });
     }

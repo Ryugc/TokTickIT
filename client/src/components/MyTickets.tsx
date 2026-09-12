@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useDevRequester } from '../context/DevRequesterContext';
+import { useAuth } from '../context/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -172,7 +172,7 @@ interface MyTicketsProps {
 }
 
 export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
-  const { selectedRequester, setIsSelectorOpen } = useDevRequester();
+  const { user } = useAuth();
 
   // Filter/sort state
   const [search, setSearch] = useState('');
@@ -225,7 +225,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
 
   // Main data fetch
   const fetchTickets = useCallback(async () => {
-    if (!selectedRequester) return;
+    if (!user) return;
 
     setLoading(true);
     setApiError(null);
@@ -242,7 +242,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
       params.set('limit', String(LIMIT));
 
       const res = await fetch(getApiUrl(`/api/tickets?${params.toString()}`), {
-        headers: { 'X-Requester-Id': String(selectedRequester.id) },
+        headers: { 'X-Requester-Id': String(user.id) },
       });
 
       if (!res.ok) {
@@ -265,7 +265,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedRequester, search, filterCategory, filterPriority, filterStatus, sortBy, sortOrder, page]);
+  }, [user, search, filterCategory, filterPriority, filterStatus, sortBy, sortOrder, page]);
 
   // Re-fetch whenever dependencies change
   useEffect(() => {
@@ -275,7 +275,7 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
   // Reset to page 1 whenever requester or filters change (not pagination itself)
   useEffect(() => {
     setPage(1);
-  }, [selectedRequester?.id, search, filterCategory, filterPriority, filterStatus, sortBy, sortOrder]);
+  }, [user?.id, search, filterCategory, filterPriority, filterStatus, sortBy, sortOrder]);
 
   // Debounced search handler
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,29 +288,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
   const [searchInput, setSearchInput] = useState('');
 
   // Guard: no requester selected
-  if (!selectedRequester) {
-    return (
-      <div
-        className="zen-card"
-        style={{ maxWidth: '860px', margin: '2rem auto', textAlign: 'center', padding: '3rem 2rem' }}
-      >
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎫</div>
-        <h2 style={{ color: 'var(--primary-green)', fontWeight: 700, marginBottom: '0.5rem' }}>
-          No Requester Selected
-        </h2>
-        <p style={{ color: '#6B7280', marginBottom: '1.5rem' }}>
-          Please select a Development Requester to view your tickets.
-        </p>
-        <button
-          id="my-tickets-select-requester-btn"
-          className="btn-zen-primary"
-          onClick={() => setIsSelectorOpen(true)}
-          style={{ padding: '0.75rem 2rem' }}
-        >
-          Select Requester
-        </button>
-      </div>
-    );
+  if (!user) {
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -366,8 +345,8 @@ export const MyTickets: React.FC<MyTicketsProps> = ({ onSelectTicket }) => {
               </h2>
               <p style={{ color: '#6B7280', fontSize: '0.875rem', marginTop: '0.2rem' }}>
                 Viewing as&nbsp;
-                <strong style={{ color: 'var(--dark-text)' }}>{selectedRequester.name}</strong>
-                &nbsp;·&nbsp;{selectedRequester.department}
+                <strong style={{ color: 'var(--dark-text)' }}>{user.name}</strong>
+                &nbsp;·&nbsp;{user.department}
               </p>
             </div>
             {!loading && pagination !== null && (

@@ -26,8 +26,10 @@ export const DevRequesterSelector: React.FC = () => {
     return null;
   }
 
+  const activeSelectedId = tempSelectedId || (selectedRequester ? String(selectedRequester.id) : (requesters.length > 0 ? String(requesters[0].id) : ''));
+
   const handleContinue = () => {
-    const selectedIdNum = Number(tempSelectedId);
+    const selectedIdNum = Number(activeSelectedId);
     const found = requesters.find((r) => r.id === selectedIdNum);
     if (found) {
       setSelectedRequester(found);
@@ -66,7 +68,7 @@ export const DevRequesterSelector: React.FC = () => {
               <select
                 id="requester-select"
                 className="form-select"
-                value={tempSelectedId}
+                value={activeSelectedId}
                 onChange={(e) => setTempSelectedId(e.target.value)}
               >
                 {requesters.map((req) => (
@@ -81,7 +83,7 @@ export const DevRequesterSelector: React.FC = () => {
               <button
                 type="submit"
                 className="btn-zen-primary"
-                disabled={!tempSelectedId || requesters.length === 0}
+                disabled={!activeSelectedId || requesters.length === 0}
               >
                 Continue
               </button>

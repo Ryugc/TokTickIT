@@ -1,8 +1,19 @@
 import React from 'react';
-import { useDevRequester } from '../context/DevRequesterContext';
+import { useAuth } from '../context/AuthContext';
 
 export const Header: React.FC = () => {
-  const { selectedRequester, setIsSelectorOpen } = useDevRequester();
+  const { user, logout } = useAuth();
+
+  const getRoleBadgeColor = (role?: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return '#9B2C2C';
+      case 'IT_STAFF':
+        return '#2B6CB0';
+      default:
+        return '#2F855A';
+    }
+  };
 
   return (
     <header className="app-header">
@@ -10,23 +21,34 @@ export const Header: React.FC = () => {
         <h1 className="header-title">TokTickIT IT Service Desk</h1>
 
         <div className="requester-badge-container">
-          {selectedRequester ? (
-            <div>
-              <span style={{ fontSize: '0.875rem', opacity: 0.9 }}>Requester: </span>
-              <strong>{selectedRequester.name}</strong>{' '}
-              <span style={{ fontSize: '0.8125rem', opacity: 0.8 }}>({selectedRequester.department})</span>
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div>
+                <strong>{user.name}</strong>{' '}
+                <span style={{ fontSize: '0.8125rem', opacity: 0.8 }}>({user.department})</span>
+              </div>
+              <span
+                style={{
+                  backgroundColor: getRoleBadgeColor(user.role),
+                  color: '#FFFFFF',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {user.role}
+              </span>
+              <button
+                type="button"
+                className="btn-zen-outline"
+                onClick={logout}
+              >
+                Logout
+              </button>
             </div>
-          ) : (
-            <span style={{ fontSize: '0.875rem', opacity: 0.9 }}>No Requester Selected</span>
           )}
-
-          <button
-            type="button"
-            className="btn-zen-outline"
-            onClick={() => setIsSelectorOpen(true)}
-          >
-            Change Requester
-          </button>
         </div>
       </div>
     </header>
