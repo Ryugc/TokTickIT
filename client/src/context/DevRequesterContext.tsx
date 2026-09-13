@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { AuthContext } from './AuthContext';
 
 export interface RequesterUser {
   id: number;
@@ -24,7 +25,11 @@ const STORAGE_KEY = 'toktickit_selected_requester';
 const DevRequesterContext = createContext<DevRequesterContextType | undefined>(undefined);
 
 export const DevRequesterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedRequester, setSelectedRequesterState] = useState<RequesterUser | null>(() => {
+  const auth = useContext(AuthContext);
+  const authRef = useRef(auth);
+  authRef.current = auth;
+
+  const [selectedRequesterState, setSelectedRequesterState] = useState<RequesterUser | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : null;
@@ -33,10 +38,27 @@ export const DevRequesterProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   });
 
-  const [isSelectorOpen, setIsSelectorOpen] = useState<boolean>(false);
+  const [isSelectorOpen, setIsSelectorOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return !saved;
+    } catch {
+      return true;
+    }
+  });
   const [requesters, setRequesters] = useState<RequesterUser[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedRequester = auth && auth.user
+    ? {
+        id: auth.user.id,
+        name: auth.user.name,
+        email: auth.user.email,
+        department: auth.user.department,
+        isActive: auth.user.isActive,
+      }
+    : selectedRequesterState;
 
   const setSelectedRequester = useCallback((requester: RequesterUser | null) => {
     setSelectedRequesterState(requester);
@@ -46,8 +68,22 @@ export const DevRequesterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       } catch (err) {
         console.error('Failed to save requester to localStorage', err);
       }
+      if (authRef.current && authRef.current.setUser) {
+        authRef.current.setUser({
+          id: requester.id,
+          name: requester.name,
+          email: requester.email,
+          role: 'REQUESTER',
+          department: requester.department,
+          isActive: requester.isActive,
+          mustChangePassword: false,
+        });
+      }
     } else {
       localStorage.removeItem(STORAGE_KEY);
+      if (authRef.current && authRef.current.setUser) {
+        authRef.current.setUser(null);
+      }
     }
   }, []);
 
@@ -62,18 +98,12 @@ export const DevRequesterProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const data: RequesterUser[] = await res.json();
       setRequesters(data);
 
-      // If no selected requester or if selected requester is no longer active/valid, auto open modal
       setSelectedRequesterState((current) => {
-        if (!current) {
+        if (!current && !authRef.current?.user) {
           setIsSelectorOpen(true);
           return null;
         }
-        const exists = data.find((r) => r.id === current.id && r.isActive);
-        if (!exists) {
-          setIsSelectorOpen(true);
-          return null;
-        }
-        return exists;
+        return current;
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');

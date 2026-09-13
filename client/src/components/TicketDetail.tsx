@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDevRequester } from '../context/DevRequesterContext';
+import { useAuth } from '../context/AuthContext';
 import AttachmentSection, { Attachment } from './AttachmentSection';
 
 interface Category {
@@ -93,14 +93,14 @@ const formatDate = (iso: string): string => {
 };
 
 export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) => {
-  const { selectedRequester } = useDevRequester();
+  const { user } = useAuth();
 
   const [ticket, setTicket] = useState<TicketDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTicketDetail = useCallback(async () => {
-    if (!selectedRequester) return;
+    if (!user) return;
 
     setLoading(true);
     setError(null);
@@ -108,7 +108,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     try {
       const res = await fetch(getApiUrl(`/api/tickets/${ticketId}`), {
         headers: {
-          'X-Requester-Id': String(selectedRequester.id),
+          'X-Requester-Id': String(user.id),
         },
       });
 
@@ -124,7 +124,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     } finally {
       setLoading(false);
     }
-  }, [ticketId, selectedRequester]);
+  }, [ticketId, user]);
 
   useEffect(() => {
     fetchTicketDetail();

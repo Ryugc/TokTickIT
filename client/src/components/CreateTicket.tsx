@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDevRequester } from '../context/DevRequesterContext';
+import { useAuth } from '../context/AuthContext';
 
 interface Category {
   id: number;
@@ -30,7 +30,7 @@ const getApiUrl = (path: string): string => {
 };
 
 export const CreateTicket: React.FC = () => {
-  const { selectedRequester, setIsSelectorOpen } = useDevRequester();
+  const { user } = useAuth();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedSystems, setRelatedSystems] = useState<RelatedSystem[]>([]);
@@ -151,8 +151,7 @@ export const CreateTicket: React.FC = () => {
     e.preventDefault();
     setApiError(null);
 
-    if (!selectedRequester) {
-      setIsSelectorOpen(true);
+    if (!user) {
       return;
     }
 
@@ -168,7 +167,7 @@ export const CreateTicket: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Requester-Id': String(selectedRequester.id),
+          'X-Requester-Id': String(user.id),
         },
         body: JSON.stringify({
           summary: summary.trim(),
@@ -194,7 +193,7 @@ export const CreateTicket: React.FC = () => {
         const attachRes = await fetch(getApiUrl(`/api/tickets/${ticket.id}/attachments`), {
           method: 'POST',
           headers: {
-            'X-Requester-Id': String(selectedRequester.id),
+            'X-Requester-Id': String(user.id),
           },
           body: formData,
         });
