@@ -9,6 +9,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  REQUESTER
+  IT_STAFF
+  ADMIN
+}
+
 enum TicketStatus {
   NEW
   OPEN
@@ -44,17 +50,24 @@ model RelatedSystem {
   @@map("related_systems")
 }
 
-model RequesterUser {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  department String
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               Role     @default(REQUESTER)
+  department         String
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  tickets Ticket[]
+  requestedTickets   Ticket[]       @relation("TicketRequester")
+  assignedTickets    Ticket[]       @relation("TicketAssignee")
+  comments           Comment[]
+  internalNotes      InternalNote[]
 
-  @@map("requester_users")
+  @@map("users")
 }
 
 model Ticket {
@@ -63,10 +76,14 @@ model Ticket {
   summary           String
   description       String
   requestedPriority TicketPriority
+  itPriority        TicketPriority?
   currentStatus     TicketStatus   @default(NEW)
   
   requesterId       Int
-  requesterUser     RequesterUser  @relation(fields: [requesterId], references: [id])
+  requesterUser     User           @relation("TicketRequester", fields: [requesterId], references: [id])
+  
+  assignedToId      Int?
+  assignedTo        User?          @relation("TicketAssignee", fields: [assignedToId], references: [id])
   
   categoryId        Int
   category          Category       @relation(fields: [categoryId], references: [id])
@@ -75,6 +92,8 @@ model Ticket {
   relatedSystem     RelatedSystem  @relation(fields: [relatedSystemId], references: [id])
   
   attachments       Attachment[]
+  comments          Comment[]
+  internalNotes     InternalNote[]
 
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -98,4 +117,29 @@ model Attachment {
 
   @@map("attachments")
 }
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("comments")
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  content   String
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("internal_notes")
+}
+
 

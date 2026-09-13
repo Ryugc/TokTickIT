@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { DevRequesterProvider } from './context/DevRequesterContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/Header';
-import DevRequesterSelector from './components/DevRequesterSelector';
+import Login from './components/Login';
+import ChangePassword from './components/ChangePassword';
 import CreateTicket from './components/CreateTicket';
 import MyTickets from './components/MyTickets';
 import TicketDetail from './components/TicketDetail';
@@ -12,11 +13,29 @@ interface Category {
 }
 
 function MainContent() {
+  const { user, loading: authLoading } = useAuth();
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<'idle' | 'online' | 'offline'>('idle');
   const [categories, setCategories] = useState<Category[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#006B3C' }}>
+        <div>Loading session context...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <Header />
+        <Login />
+      </>
+    );
+  }
 
   const checkSystem = async () => {
     setLoading(true);
@@ -45,12 +64,15 @@ function MainContent() {
   return (
     <>
       <Header />
+      {user.mustChangePassword && <ChangePassword />}
       <main className="container">
         <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '0.5rem' }}>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary-green)', marginBottom: '0.5rem' }}>
             TokTickIT IT Service Desk
           </h2>
-          <p style={{ color: '#6B7280' }}>Requester Portal</p>
+          <p style={{ color: '#6B7280' }}>
+            {user.role === 'ADMIN' ? 'Admin Portal' : user.role === 'IT_STAFF' ? 'IT Staff Portal' : 'Requester Portal'}
+          </p>
         </div>
 
         {selectedTicketId !== null ? (
@@ -133,17 +155,14 @@ function MainContent() {
           </div>
         </div>
       </main>
-      <DevRequesterSelector />
     </>
   );
 }
 
 export default function App() {
   return (
-    <DevRequesterProvider>
+    <AuthProvider>
       <MainContent />
-    </DevRequesterProvider>
+    </AuthProvider>
   );
 }
-
-
