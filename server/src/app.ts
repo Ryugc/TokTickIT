@@ -210,6 +210,142 @@ app.post('/api/auth/change-password', authMiddleware, async (req: Request, res: 
   }
 });
 
+// -------------------------------------------------------------
+// IT Staff Queue Routes
+// -------------------------------------------------------------
+
+// GET /api/staff/tickets — Global ticket queue for IT_STAFF and ADMIN
+app.get(
+  '/api/staff/tickets',
+  authMiddleware,
+  requirePasswordChangeCheck,
+  async (req: Request, res: Response) => {
+    // Role gate: only IT_STAFF and ADMIN allowed
+    if (!req.user || (req.user.role !== Role.IT_STAFF && req.user.role !== Role.ADMIN)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Only IT Staff and Admins may access the global staff queue.',
+      });
+    }
+
+    try {
+      const {
+        search,
+        category,
+        requestedPriority,
+        itPriority,
+        status,
+        assignedToId,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = '1',
+        limit = '10',
+      } = req.query as Record<string, string>;
+
+      // --- Pagination ---
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+      const skip = (pageNum - 1) * limitNum;
+
+      // --- Sort field whitelist ---
+      const allowedSortFields = ['createdAt', 'updatedAt', 'requestedPriority', 'itPriority'];
+      const resolvedSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'createdAt';
+      const resolvedSortOrder: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+
+      // --- Build where clause ---
+      const where: Record<string, unknown> = {};
+
+      // Search: ticket number or summary
+      if (search && search.trim() !== '') {
+        where.OR = [
+          { summary: { contains: search.trim(), mode: 'insensitive' } },
+          { ticketNumber: { contains: search.trim(), mode: 'insensitive' } },
+        ];
+      }
+
+      // Category filter: numeric ID or name string
+      if (category && category.trim() !== '') {
+        const numCategoryId = parseInt(category, 10);
+        if (!isNaN(numCategoryId) && numCategoryId > 0) {
+          where.categoryId = numCategoryId;
+        } else {
+          where.category = { name: { contains: category.trim(), mode: 'insensitive' } };
+        }
+      }
+
+      // Requested priority filter
+      if (requestedPriority) {
+        const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+        const upperPriority = requestedPriority.toUpperCase();
+        if (validPriorities.includes(upperPriority)) {
+          where.requestedPriority = upperPriority;
+        }
+      }
+
+      // IT priority filter
+      if (itPriority) {
+        const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+        const upperPriority = itPriority.toUpperCase();
+        if (validPriorities.includes(upperPriority)) {
+          where.itPriority = upperPriority;
+        }
+      }
+
+      // Status filter
+      if (status) {
+        const validStatuses = ['NEW', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+        const upperStatus = status.toUpperCase();
+        if (validStatuses.includes(upperStatus)) {
+          where.currentStatus = upperStatus;
+        }
+      }
+
+      // Assigned-to filter: "unassigned" → null, numeric ID → exact match
+      if (assignedToId && assignedToId.trim() !== '') {
+        if (assignedToId.toLowerCase() === 'unassigned') {
+          where.assignedToId = null;
+        } else {
+          const numAssigneeId = parseInt(assignedToId, 10);
+          if (!isNaN(numAssigneeId) && numAssigneeId > 0) {
+            where.assignedToId = numAssigneeId;
+          }
+        }
+      }
+
+      // --- Execute queries ---
+      const [tickets, totalItems] = await Promise.all([
+        prisma.ticket.findMany({
+          where,
+          orderBy: { [resolvedSortBy]: resolvedSortOrder },
+          skip,
+          take: limitNum,
+          include: {
+            requesterUser: { select: { id: true, name: true, email: true, department: true } },
+            assignedTo: { select: { id: true, name: true, email: true } },
+            category: { select: { id: true, name: true } },
+            relatedSystem: { select: { id: true, name: true } },
+          },
+        }),
+        prisma.ticket.count({ where }),
+      ]);
+
+      const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / limitNum);
+
+      return res.status(200).json({
+        data: tickets,
+        pagination: {
+          totalItems,
+          totalPages,
+          currentPage: pageNum,
+          limit: limitNum,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch staff ticket queue.' });
+    }
+  }
+);
+
 // Requesters list endpoint (active requesters, ordered by name)
 app.get('/api/requesters', async (_req: Request, res: Response) => {
   try {

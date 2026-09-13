@@ -6,6 +6,7 @@ import ChangePassword from './components/ChangePassword';
 import CreateTicket from './components/CreateTicket';
 import MyTickets from './components/MyTickets';
 import TicketDetail from './components/TicketDetail';
+import StaffTicketQueue from './components/StaffTicketQueue';
 
 interface Category {
   id: number;
@@ -75,16 +76,24 @@ function MainContent() {
           </p>
         </div>
 
-        {selectedTicketId !== null ? (
-          <TicketDetail
-            ticketId={selectedTicketId}
-            onBack={() => setSelectedTicketId(null)}
-          />
-        ) : (
-          <>
-            <CreateTicket />
-            <MyTickets onSelectTicket={(id) => setSelectedTicketId(id)} />
-          </>
+        {/* IT Staff and Admin → Staff Queue */}
+        {(user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
+          <StaffTicketQueue />
+        )}
+
+        {/* Requester → Ticket submission and personal ticket list */}
+        {user.role === 'REQUESTER' && (
+          selectedTicketId !== null ? (
+            <TicketDetail
+              ticketId={selectedTicketId}
+              onBack={() => setSelectedTicketId(null)}
+            />
+          ) : (
+            <>
+              <CreateTicket />
+              <MyTickets onSelectTicket={(id) => setSelectedTicketId(id)} />
+            </>
+          )
         )}
 
         <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
