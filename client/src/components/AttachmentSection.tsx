@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useDevRequester } from '../context/DevRequesterContext';
 
 export interface Attachment {
@@ -39,7 +40,23 @@ export const AttachmentSection: React.FC<AttachmentSectionProps> = ({
   attachments,
   onAttachmentUpdated,
 }) => {
-  const { selectedRequester } = useDevRequester();
+  const { user } = useAuth();
+  let selectedRequester = null as { id: number; name: string; email: string; department: string; isActive: boolean } | null;
+
+  try {
+    const devRequester = useDevRequester();
+    selectedRequester = devRequester.selectedRequester;
+  } catch {
+    selectedRequester = user
+      ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          department: user.department,
+          isActive: user.isActive,
+        }
+      : null;
+  }
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
