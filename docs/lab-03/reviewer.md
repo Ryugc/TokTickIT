@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document records the formal code reviews, peer feedback, author resolutions, and approvals across all five Sprint 3 feature increments[cite: 1]. Each feature branch underwent automated test verification, security role-checking (RBAC), and manual review before being merged into the primary integration line[cite: 1].
+This document records the formal code reviews, peer feedback, author resolutions, and approvals across all five Sprint 3 feature increments. Each feature branch underwent automated test verification, security role-checking (RBAC), and manual review before being merged into the primary integration line.
 
 ---
 
@@ -27,10 +27,10 @@ This document records the formal code reviews, peer feedback, author resolutions
 
 ## Review Criteria Verification
 
-* **Authentication & Authorization:** All API routes enforce active session validation via `authMiddleware` and role checks (`REQUESTER`, `IT_STAFF`, `ADMIN`)[cite: 1].
-* **Safety Invariants:** Self-deactivation, self-demotion, and removal of the last active administrator are blocked at both backend route level and frontend UI level[cite: 1].
-* **Regression Protection:** Legacy Lab 2 ticket and attachment workflows pass 100% of test suites when wrapped in authentication context[cite: 1].
-* **Design Consistency:** All screens adhere strictly to the Zen Green color scheme, accessibility rules, and responsive design guidelines[cite: 1].
+* **Authentication & Authorization:** All API routes enforce active session validation via `authMiddleware` and role checks (`REQUESTER`, `IT_STAFF`, `ADMIN`).
+* **Safety Invariants:** Self-deactivation, self-demotion, and removal of the last active administrator are blocked at both backend route level and frontend UI level.
+* **Regression Protection:** Legacy Lab 2 ticket and attachment workflows pass 100% of test suites when wrapped in authentication context.
+* **Design Consistency:** All screens adhere strictly to the Zen Green color scheme, accessibility rules, and responsive design guidelines.
 
 ---
 
@@ -38,4 +38,4 @@ This document records the formal code reviews, peer feedback, author resolutions
 
 **Review Status:** **PASSED & APPROVED FOR RELEASE**  
 **Signed-Off By:** Peer Reviewer  
-**Date:** September 16, 2026[cite: 1]
+**Date:** September 16, 2026
