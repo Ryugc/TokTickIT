@@ -42,6 +42,42 @@ const upload = multer({
 
 const PERMITTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
+const VALID_TICKET_PRIORITIES = Object.values(TicketPriority);
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  NEW: ['OPEN', 'IN_PROGRESS', 'CLOSED'],
+  OPEN: ['IN_PROGRESS', 'RESOLVED', 'CLOSED'],
+  IN_PROGRESS: ['RESOLVED', 'CLOSED'],
+  RESOLVED: ['CLOSED', 'OPEN'],
+  CLOSED: ['OPEN'],
+};
+
+const isStaffRole = (role?: Role) => role === Role.IT_STAFF || role === Role.ADMIN;
+
+const isValidTicketStatus = (value: unknown): value is TicketStatus => {
+  if (typeof value !== 'string') return false;
+  return Object.values(TicketStatus).includes(value.toUpperCase() as TicketStatus);
+};
+
+const isValidTicketPriority = (value: unknown): value is TicketPriority => {
+  if (typeof value !== 'string') return false;
+  return VALID_TICKET_PRIORITIES.includes(value.toUpperCase() as TicketPriority);
+};
+
+const normalizeStatus = (value: unknown): TicketStatus | null => {
+  if (typeof value !== 'string') return null;
+  const upperValue = value.trim().toUpperCase();
+  if (Object.values(TicketStatus).includes(upperValue as TicketStatus)) {
+    return upperValue as TicketStatus;
+  }
+  return null;
+};
+
+const isValidStatusTransition = (currentStatus: string, targetStatus: string) => {
+  if (currentStatus === targetStatus) return true;
+  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || [];
+  return allowedTransitions.includes(targetStatus);
+};
+
 // Health check endpoint
 app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -346,6 +382,312 @@ app.get(
   }
 );
 
+// PATCH /api/tickets/:id/status — Update ticket status for IT_STAFF / ADMIN
+app.patch('/api/tickets/:id/status', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !isStaffRole(req.user.role)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Only IT Staff and Admins may update ticket status.',
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const targetStatus = normalizeStatus(req.body?.status);
+    if (!targetStatus) {
+      return res.status(400).json({
+        error: 'INVALID_STATUS',
+        message: 'Status is required and must be one of NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED.',
+      });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    if (!isValidStatusTransition(ticket.currentStatus, targetStatus)) {
+      return res.status(400).json({
+        error: 'INVALID_STATUS_TRANSITION',
+        message: `Invalid status transition from ${ticket.currentStatus} to ${targetStatus}.`,
+      });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { currentStatus: targetStatus },
+    });
+
+    return res.status(200).json(updatedTicket);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to update ticket status.' });
+  }
+});
+
+// PATCH /api/tickets/:id/assign — Assign ticket to active IT staff/admin
+app.patch('/api/tickets/:id/assign', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !isStaffRole(req.user.role)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Only IT Staff and Admins may assign tickets.',
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const assignedToId = Number(req.body?.assignedToId);
+    if (!Number.isInteger(assignedToId) || assignedToId <= 0) {
+      return res.status(400).json({ error: 'INVALID_ASSIGNEE', message: 'assignedToId must be a valid positive integer.' });
+    }
+
+    const targetAssignee = await prisma.user.findUnique({ where: { id: assignedToId } });
+    if (!targetAssignee || !targetAssignee.isActive || (targetAssignee.role !== Role.IT_STAFF && targetAssignee.role !== Role.ADMIN)) {
+      return res.status(400).json({
+        error: 'INVALID_ASSIGNEE',
+        message: 'Target assignee must be an active IT Staff or Admin user.',
+      });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        assignedToId,
+        currentStatus: ticket.currentStatus === TicketStatus.NEW ? TicketStatus.OPEN : ticket.currentStatus,
+      },
+    });
+
+    return res.status(200).json(updatedTicket);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to assign ticket.' });
+  }
+});
+
+// PATCH /api/tickets/:id/priority — Update internal IT priority for staff/admin
+app.patch('/api/tickets/:id/priority', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !isStaffRole(req.user.role)) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Only IT Staff and Admins may update ticket priority.',
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const itPriority = req.body?.itPriority;
+    const normalizedPriority = typeof itPriority === 'string' ? itPriority.trim().toUpperCase() : '';
+    if (!isValidTicketPriority(normalizedPriority)) {
+      return res.status(400).json({
+        error: 'INVALID_PRIORITY',
+        message: 'itPriority must be one of LOW, MEDIUM, HIGH, URGENT.',
+      });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { itPriority: normalizedPriority as TicketPriority },
+    });
+
+    return res.status(200).json(updatedTicket);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to update ticket priority.' });
+  }
+});
+
+// POST /api/tickets/:id/comments — public comments
+app.post('/api/tickets/:id/comments', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+    if (!content) {
+      return res.status(400).json({ error: 'INVALID_COMMENT', message: 'Comment content is required.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true, requesterId: true } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    const userRole = req.user?.role;
+    if (userRole === Role.REQUESTER && ticket.requesterId !== req.user!.id) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'You can only comment on tickets you own.',
+      });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        ticketId,
+        authorId: req.user!.id,
+      },
+      include: {
+        author: { select: { id: true, name: true, role: true } },
+      },
+    });
+
+    return res.status(201).json({
+      id: comment.id,
+      content: comment.content,
+      ticketId: comment.ticketId,
+      createdAt: comment.createdAt,
+      author: comment.author,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to add public comment.' });
+  }
+});
+
+// GET /api/tickets/:id/comments — public comments
+app.get('/api/tickets/:id/comments', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true, requesterId: true } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    if (req.user?.role === Role.REQUESTER && ticket.requesterId !== req.user.id) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'You can only view comments on tickets you own.',
+      });
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, name: true, role: true } } },
+    });
+
+    return res.status(200).json(comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      ticketId: comment.ticketId,
+      createdAt: comment.createdAt,
+      author: comment.author,
+    })));
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch ticket comments.' });
+  }
+});
+
+// POST /api/tickets/:id/notes — internal notes for staff/admin only
+app.post('/api/tickets/:id/notes', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || req.user.role === Role.REQUESTER) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Internal notes are confidential to IT Staff and Admins.',
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+    if (!content) {
+      return res.status(400).json({ error: 'INVALID_NOTE', message: 'Note content is required.' });
+    }
+
+    const note = await prisma.internalNote.create({
+      data: {
+        content,
+        ticketId,
+        authorId: req.user.id,
+      },
+      include: {
+        author: { select: { id: true, name: true, role: true } },
+      },
+    });
+
+    return res.status(201).json({
+      id: note.id,
+      content: note.content,
+      ticketId: note.ticketId,
+      createdAt: note.createdAt,
+      author: note.author,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to add internal note.' });
+  }
+});
+
+// GET /api/tickets/:id/notes — confidential notes for staff/admin only
+app.get('/api/tickets/:id/notes', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  try {
+    if (!req.user || req.user.role === Role.REQUESTER) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'Internal notes are confidential to IT Staff and Admins.',
+      });
+    }
+
+    const ticketId = Number(req.params.id);
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { id: true } });
+    if (!ticket) {
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
+    }
+
+    const notes = await prisma.internalNote.findMany({
+      where: { ticketId },
+      orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, name: true, role: true } } },
+    });
+
+    return res.status(200).json(notes.map((note) => ({
+      id: note.id,
+      content: note.content,
+      ticketId: note.ticketId,
+      createdAt: note.createdAt,
+      author: note.author,
+    })));
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch internal notes.' });
+  }
+});
+
 // Requesters list endpoint (active requesters, ordered by name)
 app.get('/api/requesters', async (_req: Request, res: Response) => {
   try {
@@ -638,21 +980,12 @@ app.get('/api/tickets', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/tickets/:id — Retrieve full ticket detail for an owned ticket
-app.get('/api/tickets/:id', async (req: Request, res: Response) => {
+// GET /api/tickets/:id — Retrieve ticket detail with role-aware visibility
+app.get('/api/tickets/:id', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
   try {
-    const requesterIdHeader = req.headers['x-requester-id'];
-    if (!requesterIdHeader) {
-      return res.status(400).json({ error: 'Missing X-Requester-Id header' });
-    }
-    const requesterId = Number(requesterIdHeader);
-    if (isNaN(requesterId) || requesterId <= 0) {
-      return res.status(400).json({ error: 'Invalid X-Requester-Id header' });
-    }
-
     const ticketId = Number(req.params.id);
-    if (isNaN(ticketId) || ticketId <= 0) {
-      return res.status(400).json({ error: 'Invalid ticket ID' });
+    if (!Number.isInteger(ticketId) || ticketId <= 0) {
+      return res.status(400).json({ error: 'INVALID_TICKET_ID', message: 'Ticket ID must be a valid positive integer.' });
     }
 
     const ticket = await prisma.ticket.findUnique({
@@ -661,6 +994,7 @@ app.get('/api/tickets/:id', async (req: Request, res: Response) => {
         category: { select: { id: true, name: true } },
         relatedSystem: { select: { id: true, name: true } },
         requesterUser: { select: { id: true, name: true, email: true, department: true } },
+        assignedTo: { select: { id: true, name: true, email: true, role: true } },
         attachments: {
           select: {
             id: true,
@@ -673,20 +1007,40 @@ app.get('/api/tickets/:id', async (req: Request, res: Response) => {
           },
           orderBy: { id: 'asc' },
         },
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            author: { select: { id: true, name: true, role: true } },
+          },
+        },
+        internalNotes: req.user && isStaffRole(req.user.role)
+          ? {
+              orderBy: { createdAt: 'asc' },
+              include: {
+                author: { select: { id: true, name: true, role: true } },
+              },
+            }
+          : false,
       },
     });
 
     if (!ticket) {
-      return res.status(404).json({ error: 'Ticket not found' });
+      return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
     }
 
-    if (ticket.requesterId !== requesterId) {
-      return res.status(403).json({ error: 'Forbidden: Ticket does not belong to requester' });
+    if (req.user?.role === Role.REQUESTER && ticket.requesterId !== req.user.id) {
+      return res.status(403).json({ error: 'FORBIDDEN', message: 'Ticket does not belong to requester.' });
     }
 
-    return res.status(200).json(ticket);
+    const response = {
+      ...ticket,
+      comments: ticket.comments || [],
+      ...(req.user && isStaffRole(req.user.role) ? { internalNotes: ticket.internalNotes || [] } : {}),
+    };
+
+    return res.status(200).json(response);
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch ticket details' });
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch ticket details.' });
   }
 });
 
