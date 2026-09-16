@@ -7,6 +7,7 @@ import CreateTicket from './components/CreateTicket';
 import MyTickets from './components/MyTickets';
 import TicketDetail from './components/TicketDetail';
 import StaffTicketQueue from './components/StaffTicketQueue';
+import UserManagement from './components/UserManagement';
 
 interface Category {
   id: number;
@@ -80,6 +81,8 @@ function MainContent() {
         {(user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
           <StaffTicketQueue />
         )}
+
+        {user.role === 'ADMIN' && <UserManagement />}
 
         {/* Requester → Ticket submission and personal ticket list */}
         {user.role === 'REQUESTER' && (
