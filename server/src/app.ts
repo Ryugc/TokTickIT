@@ -53,6 +53,27 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
 
 const isStaffRole = (role?: Role) => role === Role.IT_STAFF || role === Role.ADMIN;
 
+const isValidPassword = (password: unknown): password is string => {
+  return typeof password === 'string'
+    && password.length >= 8
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /[0-9]/.test(password)
+    && /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
+};
+
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  department: true,
+  isActive: true,
+  mustChangePassword: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
 const isValidTicketStatus = (value: unknown): value is TicketStatus => {
   if (typeof value !== 'string') return false;
   return Object.values(TicketStatus).includes(value.toUpperCase() as TicketStatus);
@@ -685,6 +706,183 @@ app.get('/api/tickets/:id/notes', authMiddleware, requirePasswordChangeCheck, as
     })));
   } catch (error) {
     return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch internal notes.' });
+  }
+});
+
+// -------------------------------------------------------------
+// Administrator User Management Routes
+// -------------------------------------------------------------
+
+const requireAdmin = (req: Request, res: Response) => {
+  if (!req.user || req.user.role !== Role.ADMIN) {
+    res.status(403).json({
+      error: 'FORBIDDEN',
+      message: 'Only administrators may manage users.',
+    });
+    return false;
+  }
+  return true;
+};
+
+// GET /api/admin/users — paginated admin user directory
+app.get('/api/admin/users', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const {
+      search = '',
+      role,
+      department,
+      isActive,
+      page = '1',
+      limit = '10',
+    } = req.query as Record<string, string>;
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const limitNumber = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
+    const where: Record<string, unknown> = {};
+
+    if (search.trim()) {
+      where.OR = [
+        { name: { contains: search.trim(), mode: 'insensitive' } },
+        { email: { contains: search.trim(), mode: 'insensitive' } },
+      ];
+    }
+    if (role && Object.values(Role).includes(role.toUpperCase() as Role)) {
+      where.role = role.toUpperCase();
+    }
+    if (department?.trim()) {
+      where.department = { contains: department.trim(), mode: 'insensitive' };
+    }
+    if (isActive === 'true' || isActive === 'false') {
+      where.isActive = isActive === 'true';
+    }
+
+    const [users, totalItems] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: userSelect,
+        orderBy: { name: 'asc' },
+        skip: (pageNumber - 1) * limitNumber,
+        take: limitNumber,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return res.status(200).json({
+      data: users,
+      pagination: {
+        totalItems,
+        totalPages: totalItems === 0 ? 0 : Math.ceil(totalItems / limitNumber),
+        currentPage: pageNumber,
+        limit: limitNumber,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to fetch users.' });
+  }
+});
+
+// POST /api/admin/users — provision a user with a temporary password
+app.post('/api/admin/users', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { name, email, department, role, password, initialPassword } = req.body || {};
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const normalizedRole = typeof role === 'string' ? role.trim().toUpperCase() : '';
+    const temporaryPassword = password ?? initialPassword;
+
+    if (!name?.trim() || !normalizedEmail || !department?.trim() || !Object.values(Role).includes(normalizedRole as Role)) {
+      return res.status(400).json({ error: 'INVALID_INPUT', message: 'Name, email, department, and a valid role are required.' });
+    }
+    if (!isValidPassword(temporaryPassword)) {
+      return res.status(400).json({ error: 'INVALID_PASSWORD', message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'EMAIL_EXISTS', message: 'A user with this email already exists.' });
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email: normalizedEmail,
+        department: department.trim(),
+        role: normalizedRole as Role,
+        passwordHash: bcrypt.hashSync(temporaryPassword, 10),
+        mustChangePassword: true,
+      },
+      select: userSelect,
+    });
+    return res.status(201).json(user);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to create user.' });
+  }
+});
+
+// PATCH /api/admin/users/:id — edit a user profile and active state
+app.patch('/api/admin/users/:id', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'INVALID_USER_ID', message: 'User ID must be a valid positive integer.' });
+    }
+    const target = await prisma.user.findUnique({ where: { id: userId } });
+    if (!target) return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found.' });
+
+    const nextRole = req.body?.role === undefined ? target.role : String(req.body.role).trim().toUpperCase();
+    const nextActive = req.body?.isActive === undefined ? target.isActive : req.body.isActive;
+    if (!Object.values(Role).includes(nextRole as Role) || typeof nextActive !== 'boolean') {
+      return res.status(400).json({ error: 'INVALID_INPUT', message: 'Role and isActive must contain valid values.' });
+    }
+    if (target.id === req.user!.id && !nextActive) {
+      return res.status(400).json({ error: 'SELF_DEACTIVATION_BLOCKED', message: 'You cannot deactivate your own Admin account. Please contact another system administrator.' });
+    }
+    if (target.id === req.user!.id && nextRole !== Role.ADMIN) {
+      return res.status(400).json({ error: 'SELF_DEMOTION_BLOCKED', message: 'You cannot remove your own ADMIN role.' });
+    }
+    if (target.role === Role.ADMIN && target.isActive && (nextRole !== Role.ADMIN || !nextActive)) {
+      const activeAdminCount = await prisma.user.count({ where: { role: Role.ADMIN, isActive: true } });
+      if (activeAdminCount <= 1) {
+        return res.status(400).json({ error: 'ACTIVE_ADMIN_REQUIRED', message: 'At least one active Admin must remain in the system.' });
+      }
+    }
+
+    const data: Record<string, unknown> = { role: nextRole as Role, isActive: nextActive };
+    if (typeof req.body?.name === 'string' && req.body.name.trim()) data.name = req.body.name.trim();
+    if (typeof req.body?.department === 'string' && req.body.department.trim()) data.department = req.body.department.trim();
+    if (typeof req.body?.email === 'string' && req.body.email.trim()) data.email = req.body.email.trim().toLowerCase();
+
+    const updatedUser = await prisma.user.update({ where: { id: userId }, data, select: userSelect });
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to update user.' });
+  }
+});
+
+// POST /api/admin/users/:id/reset-password — reset credentials and require change
+app.post('/api/admin/users/:id/reset-password', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const userId = Number(req.params.id);
+    const temporaryPassword = req.body?.password ?? req.body?.newPassword;
+    if (!Number.isInteger(userId) || userId <= 0) return res.status(400).json({ error: 'INVALID_USER_ID', message: 'User ID must be a valid positive integer.' });
+    if (!isValidPassword(temporaryPassword)) return res.status(400).json({ error: 'INVALID_PASSWORD', message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.' });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found.' });
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: bcrypt.hashSync(temporaryPassword, 10), mustChangePassword: true },
+      select: userSelect,
+    });
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    return res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to reset user password.' });
   }
 });
 
