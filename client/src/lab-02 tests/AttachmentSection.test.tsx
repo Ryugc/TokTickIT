@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AttachmentSection, { Attachment } from '../components/AttachmentSection';
 import { DevRequesterProvider } from '../context/DevRequesterContext';
+import { AuthProvider } from '../context/AuthContext';
 
 describe('AttachmentSection Component', () => {
   const mockRequester = {
@@ -57,13 +58,15 @@ describe('AttachmentSection Component', () => {
 
   const renderComponent = (attachments = mockAttachments) => {
     return render(
-      <DevRequesterProvider>
-        <AttachmentSection
-          ticketId={101}
-          attachments={attachments}
-          onAttachmentUpdated={onAttachmentUpdated}
-        />
-      </DevRequesterProvider>
+      <AuthProvider>
+        <DevRequesterProvider>
+          <AttachmentSection
+            ticketId={101}
+            attachments={attachments}
+            onAttachmentUpdated={onAttachmentUpdated}
+          />
+        </DevRequesterProvider>
+      </AuthProvider>
     );
   };
 
