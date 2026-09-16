@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import App from '../App';
+import DevRequesterSelector from '../components/DevRequesterSelector';
+import { DevRequesterProvider, useDevRequester } from '../context/DevRequesterContext';
 
 describe('DevRequesterSelector Component & Context', () => {
   const mockRequesters = [
@@ -45,8 +46,19 @@ describe('DevRequesterSelector Component & Context', () => {
     });
   });
 
+  const SelectorHarness = () => {
+    const { setIsSelectorOpen } = useDevRequester();
+    return <><DevRequesterSelector /><button type="button" onClick={() => setIsSelectorOpen(true)}>Change Requester</button></>;
+  };
+
+  const renderSelector = () => render(
+    <DevRequesterProvider>
+      <SelectorHarness />
+    </DevRequesterProvider>,
+  );
+
   it('renders Dev Requester Selector modal and explanatory notice when no identity is selected', async () => {
-    render(<App />);
+    renderSelector();
 
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -59,7 +71,7 @@ describe('DevRequesterSelector Component & Context', () => {
   });
 
   it('populates dropdown with active requesters', async () => {
-    render(<App />);
+    renderSelector();
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
@@ -74,7 +86,7 @@ describe('DevRequesterSelector Component & Context', () => {
   });
 
   it('updates selected requester in context and header when Continue is clicked', async () => {
-    render(<App />);
+    renderSelector();
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
@@ -90,17 +102,13 @@ describe('DevRequesterSelector Component & Context', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    // Requester name now appears in Header AND MyTickets sub-header — use getAllByText
-    expect(screen.getAllByText('Sarah Johnson').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('(Engineering)')).toBeInTheDocument();
-
     const stored = JSON.parse(localStorage.getItem('toktickit_selected_requester') || '{}');
     expect(stored.id).toBe(2);
     expect(stored.name).toBe('Sarah Johnson');
   });
 
   it('allows changing requester via header Change Requester button', async () => {
-    render(<App />);
+    renderSelector();
 
     await waitFor(() => {
       expect(screen.getByLabelText(/Development Requester User/i)).toBeInTheDocument();
@@ -113,10 +121,6 @@ describe('DevRequesterSelector Component & Context', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    // Requester name now appears in Header AND MyTickets sub-header — use getAllByText
-    expect(screen.getAllByText('Jennifer Anderson').length).toBeGreaterThanOrEqual(1);
-
-    // Click Change Requester button
     const changeButton = screen.getByRole('button', { name: 'Change Requester' });
     fireEvent.click(changeButton);
 

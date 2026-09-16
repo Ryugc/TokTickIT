@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DevRequesterProvider } from '../context/DevRequesterContext';
+import { AuthProvider } from '../context/AuthContext';
 import MyTickets from '../components/MyTickets';
 
 // ---------------------------------------------------------------------------
@@ -58,9 +59,11 @@ const makeTicketsResponse = (tickets: ReturnType<typeof makeTicket>[], meta: Par
 function renderWithRequester(requester = mockRequesterA) {
   localStorage.setItem('toktickit_selected_requester', JSON.stringify(requester));
   return render(
-    <DevRequesterProvider>
-      <MyTickets />
-    </DevRequesterProvider>,
+    <AuthProvider>
+      <DevRequesterProvider>
+        <MyTickets />
+      </DevRequesterProvider>
+    </AuthProvider>,
   );
 }
 
@@ -403,9 +406,9 @@ describe('MyTickets Component', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 11. No requester selected — shows prompt
+  // 11. No authenticated user — component stays hidden
   // -------------------------------------------------------------------------
-  it('shows "No Requester Selected" prompt with a select button when no requester is active', async () => {
+  it('renders nothing when no authenticated user is available', async () => {
     // No localStorage entry → context stays null
     vi.spyOn(global, 'fetch').mockImplementation((urlInput) => {
       const url = typeof urlInput === 'string' ? urlInput : urlInput.toString();
@@ -417,15 +420,16 @@ describe('MyTickets Component', () => {
     // Do NOT set localStorage — selectedRequester will be null after fetchRequesters completes
     // (context auto-opens selector, so selectedRequester stays null initially)
     render(
-      <DevRequesterProvider>
-        <MyTickets />
-      </DevRequesterProvider>,
+      <AuthProvider>
+        <DevRequesterProvider>
+          <MyTickets />
+        </DevRequesterProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/No Requester Selected/i)).toBeInTheDocument();
+      expect(screen.queryByText(/No Requester Selected/i)).not.toBeInTheDocument();
     });
-
-    expect(screen.getByRole('button', { name: /Select Requester/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Select Requester/i })).not.toBeInTheDocument();
   });
 });

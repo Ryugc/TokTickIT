@@ -5,6 +5,15 @@ import App from './App';
 describe('TokTickIT IT Service Desk Component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem('toktickit_selected_requester', JSON.stringify({
+      id: 1,
+      name: 'Jennifer Anderson',
+      email: 'jennifer.anderson@toktickit.com',
+      department: 'Human Resources',
+      isActive: true,
+    }));
   });
 
   it('renders app title heading and check system button', () => {
@@ -64,10 +73,10 @@ describe('TokTickIT IT Service Desk Component', () => {
     });
 
     expect(screen.getByText('Supported Request Categories:')).toBeInTheDocument();
-    expect(screen.getByText('Account and Access')).toBeInTheDocument();
-    expect(screen.getByText('Hardware')).toBeInTheDocument();
-    expect(screen.getByText('Software')).toBeInTheDocument();
-    expect(screen.getByText('Network')).toBeInTheDocument();
+    expect(screen.getAllByText('Account and Access').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Software').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Network').length).toBeGreaterThan(0);
   });
 
   it('displays offline status and error message on fetch failure', async () => {
