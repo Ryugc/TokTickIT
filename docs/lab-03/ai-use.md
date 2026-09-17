@@ -24,7 +24,7 @@
 ## My Reflection
 
 ### Specification-Agent Reflection
-Utilizing an AI agent during the specification phase significantly accelerated the definition of business rules and edge-case detection. The agent was particularly effective at formulating complete acceptance criteria (AC-01 through AC-15) and structured authorization matrices. It caught potential gaps early, such as enforcing the zero-admin state guard and preventing infinite redirect loops during mandatory first-login password changes.
+Using an AI agent during the specification phase significantly accelerated the definition of business rules and edge-case detection. The agent was particularly effective at formulating complete acceptance criteria (AC-01-AC-15). It caught potential issues early, such as enforcing the zero-admin state guard and preventing infinite redirect loops during mandatory first-login password changes.
 
 ### Coding-Agent Reflection
 As a coding assistant, the AI excelled at generating boilerplate Prisma schema relations, Express route handlers, and React component UI structures. However, human oversight remained essential for verifying security contexts—such as ensuring HTTP-Only cookie flags were set correctly, confirming internal notes were completely stripped from `REQUESTER` API responses, and managing non-fast-forward Git branch merges without clobbering feature histories.
