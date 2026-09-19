@@ -1,8 +1,8 @@
 # Lab 3 Peer Review Log & Engineering Contract Sign-Off
 
 **Repository:** [Ryugc/TokTickIT](https://github.com/Ryugc/TokTickIT)  
-**Author:** Student Developer  
-**Lead Reviewer:** Peer Reviewer (Sprint 3 QA)  
+**Author:** Grittapob Chutitas 
+**Reviewer:** Moe Thauk ko 
 **Target Branches:** `lab3-staging` / `main`
 
 ---
