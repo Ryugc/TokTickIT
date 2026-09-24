@@ -11,6 +11,9 @@ import { TicketPriority, TicketStatus, Role } from '@prisma/client';
 import prisma from './lib/prisma';
 import { authMiddleware, requirePasswordChangeCheck, JWT_SECRET } from './middleware/auth';
 
+import actionsRouter from './routes/actions';
+import dashboardRouter from './routes/dashboard';
+
 dotenv.config();
 
 export const app = express();
@@ -18,6 +21,9 @@ export const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+
+app.use('/api', actionsRouter);
+app.use('/api', dashboardRouter);
 
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -41,14 +47,18 @@ const upload = multer({
 });
 
 const PERMITTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('toktickit-invalid-password', 10);
 
 const VALID_TICKET_PRIORITIES = Object.values(TicketPriority);
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  NEW: ['OPEN', 'IN_PROGRESS', 'CLOSED'],
-  OPEN: ['IN_PROGRESS', 'RESOLVED', 'CLOSED'],
-  IN_PROGRESS: ['RESOLVED', 'CLOSED'],
-  RESOLVED: ['CLOSED', 'OPEN'],
-  CLOSED: ['OPEN'],
+  NEW: ['OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'CANCELLED'],
+  OPEN: ['IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'CANCELLED'],
+  IN_PROGRESS: ['WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'CANCELLED', 'OPEN'],
+  WAITING_FOR_REQUESTER: ['IN_PROGRESS', 'OPEN', 'RESOLVED', 'CLOSED', 'CANCELLED'],
+  RESOLVED: ['CLOSED', 'REOPENED', 'OPEN'],
+  REOPENED: ['IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'CLOSED', 'CANCELLED', 'OPEN'],
+  CLOSED: ['REOPENED', 'OPEN'],
+  CANCELLED: ['REOPENED', 'OPEN'],
 };
 
 const isStaffRole = (role?: Role) => role === Role.IT_STAFF || role === Role.ADMIN;
@@ -151,25 +161,28 @@ app.get('/api/related-systems', async (_req: Request, res: Response) => {
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Email and password are required.' });
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password' });
     }
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
 
+    const passwordValid = bcrypt.compareSync(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    if (!passwordValid) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password' });
+    }
+
     if (!user) {
-      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password credentials.' });
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password' });
     }
 
     if (!user.isActive) {
-      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Account is deactivated.' });
-    }
-
-    const passwordValid = bcrypt.compareSync(password, user.passwordHash);
-    if (!passwordValid) {
-      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Invalid email or password credentials.' });
+      return res.status(401).json({
+        code: 'ACCOUNT_INACTIVE',
+        message: 'Your account has been deactivated. Please contact an administrator.',
+      });
     }
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
@@ -200,7 +213,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 
 // POST /api/auth/logout
 app.post('/api/auth/logout', (_req: Request, res: Response) => {
-  res.clearCookie('toktickit_session');
+  res.clearCookie('toktickit_session', { httpOnly: true, sameSite: 'lax' });
   return res.status(200).json({ message: 'Successfully logged out.' });
 });
 
