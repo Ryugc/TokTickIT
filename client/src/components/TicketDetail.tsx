@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AttachmentSection, { Attachment } from './AttachmentSection';
+import ActionsTakenSection from './ActionsTakenSection';
 
 interface Category {
   id: number;
@@ -539,6 +540,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
         </div>
 
         <AttachmentSection ticketId={ticket.id} attachments={ticket.attachments || []} onAttachmentUpdated={fetchTicketDetail} />
+        <ActionsTakenSection ticketId={ticket.id} />
       </div>
     </div>
   );
