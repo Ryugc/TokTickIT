@@ -416,14 +416,11 @@ app.get(
   }
 );
 
-// PATCH /api/tickets/:id/status — Update ticket status for IT_STAFF / ADMIN
+// PATCH /api/tickets/:id/status — Update ticket status for staff/admin or owner requester
 app.patch('/api/tickets/:id/status', authMiddleware, requirePasswordChangeCheck, async (req: Request, res: Response) => {
   try {
-    if (!req.user || !isStaffRole(req.user.role)) {
-      return res.status(403).json({
-        error: 'FORBIDDEN',
-        message: 'Only IT Staff and Admins may update ticket status.',
-      });
+    if (!req.user) {
+      return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Authentication required.' });
     }
 
     const ticketId = Number(req.params.id);
@@ -435,7 +432,7 @@ app.patch('/api/tickets/:id/status', authMiddleware, requirePasswordChangeCheck,
     if (!targetStatus) {
       return res.status(400).json({
         error: 'INVALID_STATUS',
-        message: 'Status is required and must be one of NEW, OPEN, IN_PROGRESS, RESOLVED, CLOSED.',
+        message: 'Status is required and must be one of NEW, OPEN, IN_PROGRESS, WAITING_FOR_REQUESTER, RESOLVED, CLOSED, REOPENED, CANCELLED.',
       });
     }
 
@@ -444,11 +441,57 @@ app.patch('/api/tickets/:id/status', authMiddleware, requirePasswordChangeCheck,
       return res.status(404).json({ error: 'TICKET_NOT_FOUND', message: 'Ticket not found.' });
     }
 
+    const isStaff = isStaffRole(req.user.role);
+    const isOwner = req.user.role === Role.REQUESTER && ticket.requesterId === req.user.id;
+
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({
+        error: 'FORBIDDEN',
+        message: 'You do not have permission to update this ticket status.',
+      });
+    }
+
+    // Role-specific action restrictions for Requesters
+    if (!isStaff && isOwner) {
+      const activeStatuses = [
+        TicketStatus.NEW,
+        TicketStatus.OPEN,
+        TicketStatus.IN_PROGRESS,
+        TicketStatus.WAITING_FOR_REQUESTER,
+        TicketStatus.REOPENED,
+      ];
+      const resolvedStatuses = [TicketStatus.RESOLVED, TicketStatus.CLOSED];
+
+      const isCancelling = activeStatuses.includes(ticket.currentStatus) && targetStatus === TicketStatus.CANCELLED;
+      const isReopening = resolvedStatuses.includes(ticket.currentStatus) && targetStatus === TicketStatus.REOPENED;
+
+      if (!isCancelling && !isReopening) {
+        return res.status(403).json({
+          error: 'FORBIDDEN',
+          message: 'Requesters can only cancel active tickets or reopen resolved/closed tickets.',
+        });
+      }
+    }
+
+    // Check state transition matrix validity
     if (!isValidStatusTransition(ticket.currentStatus, targetStatus)) {
       return res.status(400).json({
         error: 'INVALID_STATUS_TRANSITION',
         message: `Invalid status transition from ${ticket.currentStatus} to ${targetStatus}.`,
       });
+    }
+
+    // Resolution Gate: At least one Action Taken entry is required to set status to RESOLVED or CLOSED
+    if (targetStatus === TicketStatus.RESOLVED || targetStatus === TicketStatus.CLOSED) {
+      const actionCount = await prisma.actionTaken.count({
+        where: { ticketId },
+      });
+      if (actionCount === 0) {
+        return res.status(400).json({
+          error: 'ACTION_TAKEN_REQUIRED',
+          message: 'At least one Action Taken entry is required before resolving or closing a ticket.',
+        });
+      }
     }
 
     const updatedTicket = await prisma.ticket.update({

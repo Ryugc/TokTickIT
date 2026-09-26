@@ -77,8 +77,11 @@ const STATUS_LABELS: Record<string, string> = {
   NEW: 'New',
   OPEN: 'Open',
   IN_PROGRESS: 'In Progress',
+  WAITING_FOR_REQUESTER: 'Waiting for Requester',
   RESOLVED: 'Resolved',
+  REOPENED: 'Reopened',
   CLOSED: 'Closed',
+  CANCELLED: 'Cancelled',
 };
 
 const PRIORITY_COLORS: Record<string, React.CSSProperties> = {
@@ -89,11 +92,14 @@ const PRIORITY_COLORS: Record<string, React.CSSProperties> = {
 };
 
 const STATUS_COLORS: Record<string, React.CSSProperties> = {
-  NEW:         { backgroundColor: '#EAF6EF', color: '#006B3C' },
-  OPEN:        { backgroundColor: '#DBEAFE', color: '#1E40AF' },
-  IN_PROGRESS: { backgroundColor: '#FEF3C7', color: '#92400E' },
-  RESOLVED:    { backgroundColor: '#D1FAE5', color: '#065F46' },
-  CLOSED:      { backgroundColor: '#F3F4F6', color: '#374151' },
+  NEW:                   { backgroundColor: '#DBEAFE', color: '#1E40AF' },
+  OPEN:                  { backgroundColor: '#FEF3C7', color: '#92400E' },
+  IN_PROGRESS:           { backgroundColor: '#E0E7FF', color: '#3730A3' },
+  WAITING_FOR_REQUESTER: { backgroundColor: '#FFEDD5', color: '#9A3412' },
+  RESOLVED:              { backgroundColor: '#DCFCE7', color: '#166534' },
+  REOPENED:              { backgroundColor: '#FEE2E2', color: '#991B1B' },
+  CLOSED:                { backgroundColor: '#F1F5F9', color: '#475569' },
+  CANCELLED:             { backgroundColor: '#E2E8F0', color: '#64748B' },
 };
 
 const formatDate = (iso: string): string => {
@@ -116,6 +122,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
   const [ticket, setTicket] = useState<TicketDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [statusValue, setStatusValue] = useState('');
   const [priorityValue, setPriorityValue] = useState('');
   const [commentInput, setCommentInput] = useState('');
@@ -166,6 +173,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
     const nextStatus = event.target.value;
     if (!ticket || !user || !isStaffView) return;
 
+    setStatusError(null);
     setStatusValue(nextStatus);
     try {
       const res = await fetch(getApiUrl(`/api/tickets/${ticket.id}/status`), {
@@ -180,8 +188,32 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
       }
       setTicket((prev) => (prev ? { ...prev, currentStatus: data.currentStatus || nextStatus } : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update status');
+      setStatusError(err instanceof Error ? err.message : 'Failed to update status');
       setStatusValue(ticket.currentStatus || '');
+    }
+  };
+
+  const handleRequesterStatusChange = async (nextStatus: string) => {
+    if (!ticket || !user) return;
+    setStatusError(null);
+    try {
+      const res = await fetch(getApiUrl(`/api/tickets/${ticket.id}/status`), {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requester-Id': String(user.id),
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to update ticket status');
+      }
+      setTicket((prev) => (prev ? { ...prev, currentStatus: data.currentStatus || nextStatus } : prev));
+      setStatusValue(data.currentStatus || nextStatus);
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : 'Failed to update ticket status');
     }
   };
 
@@ -296,6 +328,10 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
   const publicComments = ticket.comments || [];
   const internalNotes = ticket.internalNotes || [];
 
+  const isRequesterOwner = !isStaffView && user?.id === ticket.requesterId;
+  const canRequesterCancel = isRequesterOwner && ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'REOPENED'].includes(ticket.currentStatus);
+  const canRequesterReopen = isRequesterOwner && ['RESOLVED', 'CLOSED'].includes(ticket.currentStatus);
+
   return (
     <div style={{ maxWidth: '1100px', margin: '2rem auto 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -324,6 +360,24 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
       </div>
 
       <div className="zen-card" style={{ padding: '1.75rem 2rem' }}>
+        {statusError && (
+          <div
+            role="alert"
+            style={{
+              backgroundColor: '#FEE2E2',
+              border: '1px solid #FCA5A5',
+              color: '#991B1B',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+            }}
+          >
+            ⚠️ {statusError}
+          </div>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           <div>
             <span
@@ -362,6 +416,45 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
             >
               Status: {STATUS_LABELS[ticket.currentStatus] || ticket.currentStatus}
             </span>
+
+            {canRequesterCancel && (
+              <button
+                type="button"
+                onClick={() => handleRequesterStatusChange('CANCELLED')}
+                style={{
+                  backgroundColor: '#FEE2E2',
+                  color: '#991B1B',
+                  border: '1px solid #FCA5A5',
+                  borderRadius: '0.375rem',
+                  padding: '0.35rem 0.85rem',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel Ticket
+              </button>
+            )}
+
+            {canRequesterReopen && (
+              <button
+                type="button"
+                onClick={() => handleRequesterStatusChange('REOPENED')}
+                style={{
+                  backgroundColor: '#DBEAFE',
+                  color: '#1E40AF',
+                  border: '1px solid #93C5FD',
+                  borderRadius: '0.375rem',
+                  padding: '0.35rem 0.85rem',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Reopen Ticket
+              </button>
+            )}
+
             <span
               id="ticket-detail-priority-badge"
               style={{

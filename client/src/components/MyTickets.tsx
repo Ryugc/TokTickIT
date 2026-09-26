@@ -64,8 +64,11 @@ const STATUS_LABELS: Record<string, string> = {
   NEW: 'New',
   OPEN: 'Open',
   IN_PROGRESS: 'In Progress',
+  WAITING_FOR_REQUESTER: 'Waiting for Requester',
   RESOLVED: 'Resolved',
+  REOPENED: 'Reopened',
   CLOSED: 'Closed',
+  CANCELLED: 'Cancelled',
 };
 
 const PRIORITY_COLORS: Record<string, React.CSSProperties> = {
@@ -76,11 +79,14 @@ const PRIORITY_COLORS: Record<string, React.CSSProperties> = {
 };
 
 const STATUS_COLORS: Record<string, React.CSSProperties> = {
-  NEW:         { backgroundColor: '#EAF6EF', color: '#006B3C' },
-  OPEN:        { backgroundColor: '#DBEAFE', color: '#1E40AF' },
-  IN_PROGRESS: { backgroundColor: '#FEF3C7', color: '#92400E' },
-  RESOLVED:    { backgroundColor: '#D1FAE5', color: '#065F46' },
-  CLOSED:      { backgroundColor: '#F3F4F6', color: '#374151' },
+  NEW:                   { backgroundColor: '#DBEAFE', color: '#1E40AF' },
+  OPEN:                  { backgroundColor: '#FEF3C7', color: '#92400E' },
+  IN_PROGRESS:           { backgroundColor: '#E0E7FF', color: '#3730A3' },
+  WAITING_FOR_REQUESTER: { backgroundColor: '#FFEDD5', color: '#9A3412' },
+  RESOLVED:              { backgroundColor: '#DCFCE7', color: '#166534' },
+  REOPENED:              { backgroundColor: '#FEE2E2', color: '#991B1B' },
+  CLOSED:                { backgroundColor: '#F1F5F9', color: '#475569' },
+  CANCELLED:             { backgroundColor: '#E2E8F0', color: '#64748B' },
 };
 
 const formatDate = (iso: string): string => {
