@@ -62,7 +62,7 @@ type ViewState = 'loading' | 'loaded' | 'empty' | 'no-results' | 'error';
 // Constants
 // ---------------------------------------------------------------------------
 
-const STATUS_OPTIONS = ['NEW', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+const STATUS_OPTIONS = ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_REQUESTER', 'RESOLVED', 'REOPENED', 'CLOSED', 'CANCELLED'] as const;
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 const SORT_OPTIONS = [
   { value: 'createdAt', label: 'Created Date' },
@@ -77,14 +77,24 @@ const SORT_OPTIONS = [
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, React.CSSProperties> = {
-    NEW:         { background: '#EBF8FF', color: '#2B6CB0' },
-    OPEN:        { background: '#FEFCBF', color: '#D69E2E' },
-    IN_PROGRESS: { background: '#FAF5FF', color: '#805AD5' },
-    RESOLVED:    { background: '#F0FFF4', color: '#38A169' },
-    CLOSED:      { background: '#EDF2F7', color: '#718096' },
+    NEW:                   { background: '#DBEAFE', color: '#1E40AF' },
+    OPEN:                  { background: '#FEF3C7', color: '#92400E' },
+    IN_PROGRESS:           { background: '#E0E7FF', color: '#3730A3' },
+    WAITING_FOR_REQUESTER: { background: '#FFEDD5', color: '#9A3412' },
+    RESOLVED:              { background: '#DCFCE7', color: '#166534' },
+    REOPENED:              { background: '#FEE2E2', color: '#991B1B' },
+    CLOSED:                { background: '#F1F5F9', color: '#475569' },
+    CANCELLED:             { background: '#E2E8F0', color: '#64748B' },
   };
   const label: Record<string, string> = {
-    NEW: 'New', OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', CLOSED: 'Closed',
+    NEW: 'New',
+    OPEN: 'Open',
+    IN_PROGRESS: 'In Progress',
+    WAITING_FOR_REQUESTER: 'Waiting for Requester',
+    RESOLVED: 'Resolved',
+    REOPENED: 'Reopened',
+    CLOSED: 'Closed',
+    CANCELLED: 'Cancelled',
   };
   const style = styles[status] || { background: '#EDF2F7', color: '#718096' };
   return (
