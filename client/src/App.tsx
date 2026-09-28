@@ -9,6 +9,8 @@ import TicketDetail from './components/TicketDetail';
 import StaffTicketQueue from './components/StaffTicketQueue';
 import UserManagement from './components/UserManagement';
 
+import Dashboard from './pages/Dashboard';
+
 interface Category {
   id: number;
   name: string;
@@ -77,26 +79,30 @@ function MainContent() {
           </p>
         </div>
 
-        {/* IT Staff and Admin → Staff Queue */}
-        {(user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
-          <StaffTicketQueue />
-        )}
+        {selectedTicketId !== null ? (
+          <TicketDetail
+            ticketId={selectedTicketId}
+            onBack={() => setSelectedTicketId(null)}
+          />
+        ) : (
+          <>
+            <Dashboard onSelectTicket={(id) => setSelectedTicketId(id)} />
 
-        {user.role === 'ADMIN' && <UserManagement />}
+            {/* IT Staff and Admin → Staff Queue */}
+            {(user.role === 'IT_STAFF' || user.role === 'ADMIN') && (
+              <StaffTicketQueue />
+            )}
 
-        {/* Requester → Ticket submission and personal ticket list */}
-        {user.role === 'REQUESTER' && (
-          selectedTicketId !== null ? (
-            <TicketDetail
-              ticketId={selectedTicketId}
-              onBack={() => setSelectedTicketId(null)}
-            />
-          ) : (
-            <>
-              <CreateTicket />
-              <MyTickets onSelectTicket={(id) => setSelectedTicketId(id)} />
-            </>
-          )
+            {user.role === 'ADMIN' && <UserManagement />}
+
+            {/* Requester → Ticket submission and personal ticket list */}
+            {user.role === 'REQUESTER' && (
+              <>
+                <CreateTicket />
+                <MyTickets onSelectTicket={(id) => setSelectedTicketId(id)} />
+              </>
+            )}
+          </>
         )}
 
         <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
