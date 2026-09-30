@@ -1,8 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
-import CreateTicket from '../components/CreateTicket';
-import { DevRequesterContextType } from '../context/DevRequesterContext';
 
 describe('CreateTicket Component', () => {
   const mockCategories = [

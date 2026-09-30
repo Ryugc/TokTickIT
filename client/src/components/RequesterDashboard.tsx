@@ -99,7 +99,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onSelect
   const recentTickets = data.recentTickets || [];
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
+    <div role="region" aria-label="My Personal Dashboard" style={{ marginBottom: '2rem' }}>
       <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--dark-text)', marginBottom: '1rem' }}>
         My Personal Dashboard
       </h3>
@@ -122,7 +122,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onSelect
               borderTop: `4px solid ${card.borderTopColor}`,
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
+              justifyContent: 'space-between',
             }}
           >
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem' }}>
@@ -148,7 +148,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onSelect
           <p style={{ color: '#6B7280', fontStyle: 'italic' }}>You have not submitted any tickets yet.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+            <table aria-label="My recent tickets" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--border-color)', color: '#4B5563' }}>
                   <th style={{ padding: '0.75rem 0.5rem' }}>Ticket #</th>
@@ -200,6 +200,7 @@ export const RequesterDashboard: React.FC<RequesterDashboardProps> = ({ onSelect
                           <button
                             type="button"
                             className="btn-zen-primary"
+                            aria-label={`View ticket ${ticket.ticketNumber}`}
                             style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
                             onClick={() => onSelectTicket(ticket.id)}
                           >
