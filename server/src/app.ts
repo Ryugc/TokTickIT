@@ -453,14 +453,14 @@ app.patch('/api/tickets/:id/status', authMiddleware, requirePasswordChangeCheck,
 
     // Role-specific action restrictions for Requesters
     if (!isStaff && isOwner) {
-      const activeStatuses = [
+      const activeStatuses: TicketStatus[] = [
         TicketStatus.NEW,
         TicketStatus.OPEN,
         TicketStatus.IN_PROGRESS,
         TicketStatus.WAITING_FOR_REQUESTER,
         TicketStatus.REOPENED,
       ];
-      const resolvedStatuses = [TicketStatus.RESOLVED, TicketStatus.CLOSED];
+      const resolvedStatuses: TicketStatus[] = [TicketStatus.RESOLVED, TicketStatus.CLOSED];
 
       const isCancelling = activeStatuses.includes(ticket.currentStatus) && targetStatus === TicketStatus.CANCELLED;
       const isReopening = resolvedStatuses.includes(ticket.currentStatus) && targetStatus === TicketStatus.REOPENED;

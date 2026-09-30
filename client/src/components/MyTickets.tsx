@@ -36,10 +36,7 @@ interface PaginationMeta {
   totalPages: number;
 }
 
-interface TicketsResponse {
-  data: Ticket[];
-  pagination: PaginationMeta;
-}
+
 
 // ---------------------------------------------------------------------------
 // Helpers
