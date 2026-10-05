@@ -54,7 +54,6 @@
 
 ## 4. Final Automated Test Execution Logs (`main` Branch)
 
-> **[INSERT SCREENSHOT 3.1]**: Terminal screenshot showing 100% passing client and server test suites on the `main` branch.
 
 ### Server Test Suite Terminal Output (`npm test` in `server/`)
 ```text
