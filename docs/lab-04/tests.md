@@ -58,19 +58,27 @@
 
 ### Server Test Suite Terminal Output (`npm test` in `server/`)
 ```text
- RUN  v2.1.8 C:/project/toktickit/server
+ RUN  v4.1.10 C:/project/toktickit/server
 
- ✓ tests/lab-01/auth.api.test.ts (6 tests) 412ms
- ✓ tests/lab-02/tickets.api.test.ts (8 tests) 530ms
- ✓ tests/lab-03/comments.api.test.ts (5 tests) 380ms
- ✓ tests/lab-03/notes.api.test.ts (4 tests) 290ms
- ✓ tests/lab-03/attachments.api.test.ts (4 tests) 310ms
- ✓ tests/lab-04/actions-taken.api.test.ts (7 tests) 620ms
- ✓ tests/lab-04/ticket-workflow.api.test.ts (6 tests) 540ms
- ✓ tests/lab-04/staff-dashboard.api.test.ts (4 tests) 410ms
- ✓ tests/lab-04/requester-dashboard.api.test.ts (4 tests) 390ms
+ ✓ tests/lab-04/requester-dashboard.api.test.ts (3 tests) 64ms
+ ✓ tests/lab-01/health.test.ts (1 test) 40ms
+ ✓ tests/lab-01/categories.test.ts (1 test) 41ms
+ ✓ tests/lab-04/staff-dashboard.api.test.ts (3 tests) 64ms
+ ✓ tests/lab-02/requesters.api.test.ts (3 tests) 64ms
+ ✓ tests/lab-02/ticket-detail.api.test.ts (4 tests) 66ms
+ ✓ tests/lab-02/my-tickets.api.test.ts (13 tests) 175ms
+ ✓ tests/lab-03/staff-queue.api.test.ts (15 tests) 172ms
+ ✓ tests/lab-03/staff-operations.api.test.ts (5 tests) 343ms
+     ✓ allows valid status transitions for IT staff  302ms
+ ✓ tests/lab-04/actions-taken.api.test.ts (12 tests) 214ms
+ ✓ tests/lab-04/resolution-gate.api.test.ts (7 tests) 265ms
+ ✓ tests/lab-02/attachments.api.test.ts (7 tests) 134ms
+ ✓ tests/lab-02/create-ticket.api.test.ts (9 tests) 398ms
+ ✓ tests/lab-03/admin-users.api.test.ts (6 tests) 459ms
+     ✓ creates a user with a hashed temporary password and forced change  338ms
+ ✓ tests/lab-03/auth.api.test.ts (10 tests) 721ms
 
- Test Files  9 passed (9)
-      Tests  48 passed (48)
-   Start at  12:40:15
-   Duration  3.88s
+ Test Files  15 passed (15)
+      Tests  99 passed (99)
+   Start at  12:55:26
+   Duration  7.42s (transform 3.98s, setup 0ms, import 84.01s, tests 3.22s, environment 3ms)
