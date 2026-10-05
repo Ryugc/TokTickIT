@@ -280,7 +280,7 @@ export const CreateTicket: React.FC = () => {
 
   return (
     <div className="zen-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', pb: '1rem' }}>
+      <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary-green)', marginBottom: '0.25rem' }}>
           Create New IT Support Ticket
         </h2>

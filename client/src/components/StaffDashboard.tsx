@@ -113,7 +113,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ onSelectTicket }
   const recentTickets = data.recentTickets || [];
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
+    <div role="region" aria-label="IT Staff Operational Dashboard" style={{ marginBottom: '2rem' }}>
       <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--dark-text)', marginBottom: '1rem' }}>
         IT Staff Operational Dashboard
       </h3>
@@ -136,7 +136,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ onSelectTicket }
               borderTop: `4px solid ${card.borderTopColor}`,
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
+              justifyContent: 'space-between',
             }}
           >
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.5rem' }}>
@@ -162,7 +162,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ onSelectTicket }
           <p style={{ color: '#6B7280', fontStyle: 'italic' }}>No recent operational ticket updates.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+            <table aria-label="Recent operational activity" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--border-color)', color: '#4B5563' }}>
                   <th style={{ padding: '0.75rem 0.5rem' }}>Ticket #</th>
@@ -232,6 +232,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ onSelectTicket }
                           <button
                             type="button"
                             className="btn-zen-primary"
+                            aria-label={`View ticket ${ticket.ticketNumber}`}
                             style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
                             onClick={() => onSelectTicket(ticket.id)}
                           >

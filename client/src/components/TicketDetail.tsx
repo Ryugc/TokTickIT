@@ -421,6 +421,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
             {canRequesterCancel && (
               <button
                 type="button"
+                aria-label="Cancel Ticket"
                 onClick={() => handleRequesterStatusChange('CANCELLED')}
                 style={{
                   backgroundColor: '#FEE2E2',
@@ -440,6 +441,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
             {canRequesterReopen && (
               <button
                 type="button"
+                aria-label="Reopen Ticket"
                 onClick={() => handleRequesterStatusChange('REOPENED')}
                 style={{
                   backgroundColor: '#DBEAFE',
@@ -584,6 +586,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
               <textarea
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
+                aria-label="Add a public comment"
                 placeholder="Add a public comment"
                 style={{ width: '100%', minHeight: '80px', resize: 'vertical', border: '1px solid #CBD5E1', borderRadius: '0.5rem', padding: '0.75rem', fontSize: '0.95rem' }}
               />
@@ -619,6 +622,7 @@ export const TicketDetail: React.FC<TicketDetailProps> = ({ ticketId, onBack }) 
                 <textarea
                   value={noteInput}
                   onChange={(e) => setNoteInput(e.target.value)}
+                  aria-label="Add an internal note"
                   placeholder="Add an internal note"
                   style={{ width: '100%', minHeight: '80px', resize: 'vertical', border: '1px solid #F5D98D', borderRadius: '0.5rem', padding: '0.75rem', fontSize: '0.95rem', background: '#FFFBEB' }}
                 />

@@ -164,45 +164,47 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({ ticket
   return (
     <div
       className="actions-taken-section"
+      role="region"
+      aria-label="Actions Taken Audit Log"
       style={{
-        border: '1px solid #10B981',
+        border: '1px solid var(--secondary-green)',
         borderRadius: '0.75rem',
         overflow: 'hidden',
         marginTop: '1.5rem',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--surface-card)',
       }}
     >
       <div
         style={{
-          background: '#ECFDF5',
-          borderBottom: '1px solid #10B981',
+          background: 'var(--pale-green)',
+          borderBottom: '1px solid var(--secondary-green)',
           padding: '0.8rem 1rem',
           fontWeight: 700,
-          color: '#065F46',
+          color: 'var(--primary-green)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
         <span>🛠️ Actions Taken Audit Log</span>
-        <span style={{ fontSize: '0.8rem', color: '#047857', fontWeight: 500 }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--secondary-green)', fontWeight: 500 }}>
           {actions.length} {actions.length === 1 ? 'Entry' : 'Entries'}
         </span>
       </div>
 
       <div style={{ padding: '1.25rem' }}>
         {loading ? (
-          <div style={{ color: '#6B7280', italic: 'true', padding: '1rem 0' }}>
+          <div style={{ color: '#6B7280', fontStyle: 'italic', padding: '1rem 0' }} aria-live="polite">
             Loading actions taken log...
           </div>
         ) : error ? (
-          <div style={{ color: '#DC2626', padding: '0.5rem 0' }}>{error}</div>
+          <div role="alert" style={{ color: 'var(--error)', padding: '0.5rem 0' }}>{error}</div>
         ) : actions.length === 0 ? (
           <div style={{ color: '#6B7280', fontStyle: 'italic', marginBottom: isStaffOrAdmin ? '1.5rem' : '0' }}>
             No actions taken logged for this ticket yet.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: isStaffOrAdmin ? '1.5rem' : '0' }}>
+          <div aria-live="polite" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: isStaffOrAdmin ? '1.5rem' : '0' }}>
             {actions.map((act) => (
               <div
                 key={act.id}
@@ -216,7 +218,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({ ticket
                 <div
                   style={{
                     display: 'flex',
-                    justify: 'space-between',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '0.5rem',
                     fontSize: '0.8rem',
@@ -310,6 +312,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({ ticket
 
             {validationError && (
               <div
+                role="alert"
                 style={{
                   backgroundColor: '#FEE2E2',
                   border: '1px solid #FCA5A5',
@@ -440,6 +443,7 @@ export const ActionsTakenSection: React.FC<ActionsTakenSectionProps> = ({ ticket
                 type="submit"
                 disabled={submitting}
                 className="btn-zen-primary"
+                aria-label="Log Action Taken"
                 style={{ padding: '0.6rem 1.25rem' }}
               >
                 {submitting ? 'Submitting...' : 'Log Action Taken'}
