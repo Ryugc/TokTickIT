@@ -1,8 +1,8 @@
 # Answer Part 3: Test DD and Traceability
 
 ## 1. Document Link & Verification
-- **GitHub Document Link**: `[Insert Link to docs/lab-04/tests.md]`[cite: 13]
-- **Verification Summary**: Test planning was established alongside specification development[cite: 11]. All 18 Acceptance Criteria (AC-01 through AC-18) map directly to automated unit, API integration, UI component, workflow, authorization, regression, and E2E test files[cite: 10, 13, 16].
+- **GitHub Document Link**: `[Insert Link to docs/lab-04/tests.md]`
+- **Verification Summary**: Test planning was established alongside specification development. All 18 Acceptance Criteria (AC-01 through AC-18) map directly to automated unit, API integration, UI component, workflow, authorization, regression, and E2E test files.
 
 ---
 
@@ -34,27 +34,27 @@
 ## 3. Test Suites Structure & Inventory
 
 ### 3.1 Server Integration & Workflow API Tests (`server/tests/lab-04/`)
-- `actions-taken.api.test.ts`: Verifies ActionTaken CRUD operations, mandatory field validation, session attribution, and RBAC authorization rules[cite: 16].
-- `ticket-workflow.api.test.ts`: Verifies Resolution Gate enforcement (blocking resolution without actions) and the 8-status state machine matrix[cite: 4, 12, 16].
-- `staff-dashboard.api.test.ts`: Verifies Staff dashboard calculations (`unassignedCount`, `myAssignedCount`), recent tickets ordering, and role protection[cite: 16].
-- `requester-dashboard.api.test.ts`: Verifies Requester metric isolation and personal activity feed[cite: 16].
+- `actions-taken.api.test.ts`: Verifies ActionTaken CRUD operations, mandatory field validation, session attribution, and RBAC authorization rules.
+- `ticket-workflow.api.test.ts`: Verifies Resolution Gate enforcement (blocking resolution without actions) and the 8-status state machine matrix.
+- `staff-dashboard.api.test.ts`: Verifies Staff dashboard calculations (`unassignedCount`, `myAssignedCount`), recent tickets ordering, and role protection.
+- `requester-dashboard.api.test.ts`: Verifies Requester metric isolation and personal activity feed.
 
 ### 3.2 Client UI Component Tests (`client/src/lab-04-tests/`)
-- `ActionsTaken.test.tsx`: Verifies chronological rendering of action items, conditional form validation (`followUpNote`), and read-only mode for Requesters[cite: 12].
-- `Workflow.test.tsx`: Verifies expanded status controls, inline Resolution Gate error banner, and Requester cancel/reopen action buttons[cite: 12].
-- `StaffDashboard.test.tsx`: Verifies operational metric card values, Zen Green badge rendering, and quick-view detail navigation[cite: 12].
-- `RequesterDashboard.test.tsx`: Verifies personal metric counts, recent ticket list items, and role routing[cite: 12].
+- `ActionsTaken.test.tsx`: Verifies chronological rendering of action items, conditional form validation (`followUpNote`), and read-only mode for Requesters.
+- `Workflow.test.tsx`: Verifies expanded status controls, inline Resolution Gate error banner, and Requester cancel/reopen action buttons.
+- `StaffDashboard.test.tsx`: Verifies operational metric card values, Zen Green badge rendering, and quick-view detail navigation.
+- `RequesterDashboard.test.tsx`: Verifies personal metric counts, recent ticket list items, and role routing.
 
 ### 3.3 End-to-End E2E Test Suite (`e2e/lab-04/`)
-- `actions-taken-flow.spec.ts`: E2E verification of an IT Staff member creating and modifying an Action Taken entry on an active ticket[cite: 12].
-- `ticket-resolution.spec.ts`: E2E verification of the Resolution Gate blocking resolution until an Action Taken entry is created[cite: 12, 13].
-- `dashboards.spec.ts`: E2E verification of Staff and Requester dashboard metric rendering and drill-down links[cite: 13].
+- `actions-taken-flow.spec.ts`: E2E verification of an IT Staff member creating and modifying an Action Taken entry on an active ticket.
+- `ticket-resolution.spec.ts`: E2E verification of the Resolution Gate blocking resolution until an Action Taken entry is created.
+- `dashboards.spec.ts`: E2E verification of Staff and Requester dashboard metric rendering and drill-down links.
 
 ---
 
 ## 4. Final Automated Test Execution Logs (`main` Branch)
 
-> **[INSERT SCREENSHOT 3.1]**: Terminal screenshot showing 100% passing client and server test suites on the `main` branch[cite: 10, 13].
+> **[INSERT SCREENSHOT 3.1]**: Terminal screenshot showing 100% passing client and server test suites on the `main` branch.
 
 ### Server Test Suite Terminal Output (`npm test` in `server/`)
 ```text
