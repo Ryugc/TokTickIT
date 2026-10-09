@@ -2,7 +2,7 @@
 
 - **Repository:** [Ryugc/TokTickIT](https://github.com/Ryugc/TokTickIT)
 - **Author:** Grittapob Chutitas
-- **Reviewer:** Peer Reviewer Placeholder
+- **Reviewer:** Moe Thauk ko
 - **Target Branches:** `lab4-staging` → `main`
 
 ---
