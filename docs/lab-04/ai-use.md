@@ -22,7 +22,7 @@
 ## Reflection
 
 ### Specification-Agent Reflection
-Using an AI assistant during the specification phase ensured complete alignment across state machine rules, API parameter contracts, and acceptance criteria. The assistant identified edge cases such as validating `followUpNote` when `followUpRequired` is `true` and enforcing session-based `performedById` attribution.
+Working with the AI during the spec phase made it much easier to keep our state machine rules, API contracts, and acceptance criteria completely aligned before writing any code. Where it proved most useful was catching subtle edge cases early—like enforcing session-based performedById attribution so clients couldn't spoof actors, and requiring a followUpNote whenever followUpRequired was flagged.
 
 ### Coding-Agent Reflection
-The AI assistant rapidly generated boilerplate Prisma schema additions, Express controllers, and test cases. Human oversight ensured foreign key data types matched existing primary keys (`Int` for `ticketId` and `performedById`), verified data isolation for requesters on metrics endpoints, and ensured backward compatibility with existing Labs 1-3 test suites.
+The AI was a huge time-saver for boilerplate Prisma schemas, Express routes, and baseline test suites. However, active human oversight was still necessary to keep everything worked properly. I had to step in to ensure foreign key types matched existing primary keys (Int for ticketId and performedById), double check that requester data remained isolated on dashboard metric endpoints, and fix broken imports to preserve full backward compatibility with our Labs 1–3 test suites.
