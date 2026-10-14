@@ -81,3 +81,24 @@
       Tests  99 passed (99)
    Start at  12:55:26
    Duration  7.42s (transform 3.98s, setup 0ms, import 84.01s, tests 3.22s, environment 3ms)
+
+
+### Client Test Suite Terminal Output (`npm test` in `client/`)
+```text
+ ✓ src/lab-02 tests/CreateTicket.test.tsx (4 tests) 1461ms
+     ✓ renders ticket form fields (Category, Related System, Priority, Summary, Description, File)  604ms
+     ✓ displays real-time inline validation error messages when submitting empty required fields  399ms
+ ✓ src/App.test.tsx (4 tests) 1459ms
+     ✓ renders app title heading and check system button  846ms
+ ✓ src/lab-03-tests/StaffTicketQueue.test.tsx (12 tests) 2495ms
+     ✓ renders table headers and a ticket row for IT_STAFF user  697ms
+     ✓ shows error state with retry button when the API request fails  331ms
+ ✓ src/lab-02 tests/MyTickets.test.tsx (11 tests) 2730ms
+     ✓ renders ticket rows for the active requester when API returns data  645ms
+     ✓ triggers API re-fetch with search query when user types in search input  619ms
+     ✓ increments page and re-fetches when Next button is clicked  338ms
+
+ Test Files  13 passed (13)
+      Tests  65 passed (65)
+   Start at  19:21:00
+   Duration  33.86s (transform 6.17s, setup 50.29s, import 14.20s, tests 17.96s, environment 324.69s)
