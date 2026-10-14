@@ -2,7 +2,7 @@
 
 ## 1. Document Link & Verification
 - **GitHub Document Link**: [docs/lab-04/tests.md](https://github.com/Ryugc/TokTickIT/blob/main/docs/lab-04/tests.md)[cite: 23]
-- **Verification Summary**: Test planning was established alongside specification development[cite: 23]. All 18 Acceptance Criteria (AC-01 through AC-18) map directly to automated unit, API integration, UI component, workflow, authorization, regression, and E2E test files[cite: 23, 24].
+- **Verification Summary**: Test planning was established concurrently with specification authoring[cite: 23]. All 18 Acceptance Criteria (AC-01 through AC-18) map directly to automated unit, API integration, UI component, workflow, authorization, regression, and E2E test suites[cite: 23, 24].
 
 ---
 
